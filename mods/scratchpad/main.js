@@ -64,6 +64,8 @@ export default class Scratchpad extends View {
     this.pending = undefined;
     this.writing = null;
     this.projecting = false;   // programmatic set_value: don't re-classify
+    this.focused = null;       // the block whose editor holds the keyboard
+    this.h = cx.focus_handle();   // puts the pad on the keyboard's path (track_focus)
     cx.spawn(async (cx) => {
       const text = await readTextFile(file()).catch(() => null);
       this.setDoc(text ?? "", cx);
@@ -80,6 +82,8 @@ export default class Scratchpad extends View {
 
   wire(b, state) {
     state.on("change", (_e, c) => { if (!this.projecting) this.onBlockChange(b, c); });
+    state.on("focus", () => { this.focused = b; });
+    state.on("blur", () => { if (this.focused === b) this.focused = null; });
     return state;
   }
 
@@ -191,7 +195,12 @@ export default class Scratchpad extends View {
   // Enter or a paste: the newlines become new blocks at once.
   expand(b, value, cx) {
     const idx = this.blocks.indexOf(b);
+    // The editor holds projected text: put the block's own prefix back on
+    // the first line before anything is written or parsed, or Enter in a
+    // heading would strip its `# `.
     const next = value.split("\n");
+    if (b.kind === "h") next[0] = "#".repeat(b.level) + " " + next[0];
+    else if (b.kind === "todo") next[0] = `${b.bullet} [${b.checked ? "x" : " "}] ${next[0]}`;
     this.lines.splice(b.from, b.to - b.from + 1, ...next);
     const sub = parseLines(next, b.from, this, cx);
     let extra = 0;
@@ -249,6 +258,7 @@ export default class Scratchpad extends View {
       cx.spawn(async () => b.state.release());
       b.state = null;
       this.writeBlock(b, value, cx);
+      this.ensureTail(cx);
       cx.notify();
       return;
     }
@@ -260,7 +270,9 @@ export default class Scratchpad extends View {
     b.state.set_value(value.slice(conv.cut));
     b.state.set_selected_range({ start: 0, end: 0 });
     this.projecting = false;
+    b.state.focus();            // keep typing through the restyle
     this.writeBlock(b, b.state.value(), cx);
+    this.ensureTail(cx);         // a converted tail gets a fresh empty line
     cx.notify();
   }
 
@@ -291,15 +303,19 @@ export default class Scratchpad extends View {
     this.save(cx);
   }
 
-  // ---- keyboard between blocks (best effort: the native textarea is the
-  // first handler; what it doesn't use bubbles to the block's wrapper) ----
+  // ---- keyboard between blocks -------------------------------------------
+  // One focus handle on the whole pad, tracked in render, puts it on the
+  // keyboard's path: what the native field doesn't use arrives here. The
+  // focused block is known from each state's focus and blur events.
 
-  blockKey(b, e, cx) {
-    if (!b.state) return;
+  padKey(e, cx) {
+    const b = this.focused;
+    if (!b || !b.state) return;
     const key = e.key;
-    const i = this.blocks.indexOf(b);
     if (key === "up" || key === "arrowup" || key === "down" || key === "arrowdown") {
+      if (b.kind === "code") return;   // arrows belong to the code caret
       const step = key === "up" || key === "arrowup" ? -1 : 1;
+      const i = this.blocks.indexOf(b);
       let j = i + step;
       while (j >= 0 && j < this.blocks.length && !this.blocks[j].state) j += step;
       if (j < 0 || j >= this.blocks.length) return;
@@ -310,8 +326,10 @@ export default class Scratchpad extends View {
       cx.stop_propagation();
       return;
     }
-    if (key === "backspace" && b.kind === "text" && b.state.value() === "" && i > 0) {
+    if (key === "backspace" && b.kind === "text" && b.state.value() === "") {
       // An emptied line joins the one above: caret to its end, line removed.
+      const i = this.blocks.indexOf(b);
+      if (i <= 0) return;
       let j = i - 1;
       while (j >= 0 && !this.blocks[j].state) j--;
       if (j < 0) return;
@@ -370,22 +388,23 @@ export default class Scratchpad extends View {
         .child(div().font_semibold().child("Scratchpad"))
         .child(div().flex_1().min_w(0).truncate().text_right().text_size(12).text_color(t.dim).child("one pad · every space")))
       .child(v_flex().id("pad-scroll").flex_1().min_h(0).overflow_y_scrollbar().px(14).py(10)
+        .track_focus(this.h)
+        .on_key_down((e, c) => this.padKey(e, c))
         .when(this.lines === null, el => el.child(div().p(6).text_size(12).text_color(t.dim).child("Loading…")))
         .when(this.lines !== null, el => el.children(this.blocks.map(b => this.block(b, t, f)))));
   }
 
   block(b, t, f) {
-    const keys = (el) => el.on_key_down((e, c) => this.blockKey(b, e, c));
     switch (b.kind) {
       case "h":
-        return keys(div().id(`h-${b.from}`).py(b.level === 1 ? 7 : b.level === 2 ? 5 : 4))
+        return div().id(`h-${b.from}`).py(b.level === 1 ? 7 : b.level === 2 ? 5 : 4)
           .child(Textarea.new(b.state).font_family(f).font_semibold().text_size(b.level === 1 ? 19 : b.level === 2 ? 16.5 : 15));
       case "todo": {
         const box = div().id(`todo-box-${b.from}`).size(15).mt(2).flex_none().rounded(4).flex().items_center().justify_center()
           .border(1).border_color(b.checked ? t.accent : t.border)
           .when(b.checked, el => el.bg(t.accent).text_color(t.accent_foreground).text_size(10).font_semibold().child("✓"))
           .cursor_pointer().on_click((_e, c) => this.toggleTodo(b, c));
-        return keys(h_flex().id(`todo-${b.from}`).items_start().gap(8))
+        return h_flex().id(`todo-${b.from}`).items_start().gap(8)
           .child(box)
           .child(Textarea.new(b.state).font_family(f).flex_1().min_w(0)
             .text_color(b.checked ? t.dim : t.foreground)
@@ -399,7 +418,7 @@ export default class Scratchpad extends View {
           .on_click((_e, c) => this.ruleToText(b, c))
           .child(div().h(1).bg(t.border));
       default:   // text: the line is the editor
-        return keys(div().id(`t-${b.from}`).py(2))
+        return div().id(`t-${b.from}`).py(2)
           .child(Textarea.new(b.state).font_family(f).text_size(13));
     }
   }

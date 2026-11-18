@@ -79,10 +79,10 @@ The document is the editor, the way Notion works:
   selection.
 - Inline emphasis shows raw (`**bold**` stays literal) — the trade for
   every line being live-editable with zero swaps.
-- Arrow-up/down between blocks and Backspace joining an emptied line into
-  the one above are best effort: they ride `on_key_down` on the block's
-  wrapper, which only sees what the native field doesn't consume. Enter,
-  click and paste flows are guaranteed regardless.
+- Arrow-up/down between blocks and Backspace joining an emptied line into the
+  one above ride one focus handle tracked on the whole pad: what the native
+  field doesn't use arrives there. Enter, click and paste flows are
+  guaranteed regardless.
 - Typing a ``` line inside a code block's content would close the block on
   the next reload (the live view stays as it was) — don't.
 - `herdr-app check` validates the loading render; blocks appear after the
