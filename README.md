@@ -21,8 +21,9 @@ reload.
   a card like the terminal panes, and each space remembers whether it had
   the pad open, exactly like Files and Changes.
 - **A keyboard way in** — `cmd-shift-s` toggles it while the layout shows.
-- **Plain wrapped text** — a comfortable textarea in your theme, light or
-  dark.
+- **Plain wrapped text, in mono** — one comfortable textarea in the
+  terminals' font (JetBrains Mono unless settings.json names another), in
+  your theme, light or dark.
 
 ## Install
 

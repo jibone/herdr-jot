@@ -18,10 +18,11 @@ screen, saved as you type to one text file.
   panes — theme `background`, 1 px `border`, 10 px corners — with a 42 px
   header: "Scratchpad" in semibold 13 px, right-aligned "one pad · every
   space" in dim 12 px, a 1 px rule under it.
-- The body is a plain wrapped text area, theme foreground on `background`,
-  13 px, padded 14 px sides / 12 px top and bottom. Empty, it carries the
-  placeholder "Jot anything — one scratchpad for every space, saved as you
-  type."
+- The body is a plain wrapped text area in the terminals' mono font
+  (`settings().font_family`, falling back to JetBrains Mono), theme
+  foreground on `background`, 13 px, padded 14 px sides / 12 px top and
+  bottom. Empty, it carries the placeholder "Jot anything — one scratchpad
+  for every space, saved as you type."
 
 ## How it behaves
 
@@ -51,7 +52,8 @@ screen, saved as you type to one text file.
 - `mods/scratchpad/` — the pane. `TextareaState.new({ placeholder })` with
   `set_soft_wrap(true)` created in `init` (a host call; never in render),
   `Textarea.new(state)` sized `flex_1().min_h(0)` in a full-height
-  `v_flex`, card chrome copied from the shipped `files` mod. From `herdr`:
+  `v_flex` with `.font_family(settings().font_family ?? "JetBrains Mono")`,
+  card chrome copied from the shipped `files` mod. From `herdr`:
   `readTextFile`/`writeTextFile` with `appHome()`; writes are
   compare-to-expected and serialized through one loop that always writes the
   latest text first, so fast typing cannot race itself. On a rejected write

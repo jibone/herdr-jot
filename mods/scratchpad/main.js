@@ -5,9 +5,11 @@
 // survives restarts and hot reloads, and reads the same in every space.
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, Textarea, TextareaState } from "gpui-base";
-import { appHome, readTextFile, writeTextFile, theme } from "herdr";
+import { appHome, readTextFile, writeTextFile, theme, settings } from "herdr";
 
 const file = () => `${appHome()}/data/scratchpad/scratchpad.txt`;
+// The terminals' mono font (Herdr's bundled default when unset).
+const mono = () => settings().font_family ?? "JetBrains Mono";
 
 export default class Scratchpad extends View {
   init(_props, cx) {
@@ -68,6 +70,6 @@ export default class Scratchpad extends View {
       .child(h_flex().h(42).flex_none().px(14).gap(8).items_center().border_b(1).border_color(t.border)
         .child(div().font_semibold().child("Scratchpad"))
         .child(div().flex_1().min_w(0).truncate().text_right().text_size(12).text_color(t.dim).child("one pad · every space")))
-      .child(Textarea.new(this.state).flex_1().min_h(0).px(14).py(12));
+      .child(Textarea.new(this.state).font_family(mono()).flex_1().min_h(0).px(14).py(12));
   }
 }
