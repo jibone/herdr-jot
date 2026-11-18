@@ -3,7 +3,9 @@
 A whole-app Scratchpad for the Herdr app: a "Scratchpad" pill in the tab bar
 after Files / Changes that opens a free-text pane on the right side of the
 window. One pad for the whole app — the same text in every space, on every
-screen, saved as you type to one text file.
+screen, saved as you type to one text file. That file is the pad's whole
+interface: a coding agent told to "note it in the scratchpad" appends to it,
+and the pad shows the note a moment later.
 
 ![Scratchpad](preview.png)
 
@@ -14,7 +16,7 @@ screen, saved as you type to one text file.
   While the pad is open the pill takes the theme's `selected` background, the
   same active look Files and Changes have.
 - The pad is its own right-side column beside the Files / Changes panel
-  (340 px default, 260–900, drag the divider): a card like the terminal
+  (420 px default, 260–900, drag the divider): a card like the terminal
   panes — theme `background`, 1 px `border`, 10 px corners — with a 42 px
   header: "Scratchpad" in semibold 13 px, right-aligned "one pad · every
   space" in dim 12 px, a 1 px rule under it.
@@ -37,6 +39,14 @@ screen, saved as you type to one text file.
   `data/scratchpad/scratchpad.txt` in the app's home folder. Restart the app
   or hot-reload the mod and the text is still there; the cursor position
   resets to where the editor starts.
+- The file is the pad's whole interface, for people and agents alike:
+  a coding agent told to "note it down in the scratchpad" appends to the
+  file, and the pad picks it up within a moment — the mod watches the
+  file's folder (`watchFolder`) and pulls the disk text into the editor
+  whenever nothing of the person's is in flight. An external write while
+  the pad is closed is there on the next open. If the person is typing at
+  that same moment, their text wins and the external write is dropped (the
+  compare-to-expected save reconciles).
 - No agent status is involved; nothing here changes with terminal state.
 
 ## Built from
@@ -45,7 +55,7 @@ screen, saved as you type to one text file.
   shipped `main` v0.1.12) with two grafts: the `tabs` block's mod pointed at
   `tabs-scratchpad`, and a hidden block added to `work-body` after `panel`:
   `{ "id": "scratchpad", "type": "block", "content": { "mod": "scratchpad" },
-  "size": { "px": 340 }, "min": 260, "max": 900, "hidden": true }`. On a
+  "size": { "px": 420 }, "min": 260, "max": 900, "hidden": true }`. On a
   fresh machine, graft the same two edits onto any main-derived layout; the
   rest of this file is personal (it references herdr-nvim and gitview mods
   the person has installed).
@@ -58,7 +68,11 @@ screen, saved as you type to one text file.
   compare-to-expected and serialized through one loop that always writes the
   latest text first, so fast typing cannot race itself. On a rejected write
   the disk text becomes the new snapshot and the write is retried once —
-  latest writer wins. `mod.json` is `{ "place": "none" }`; art is one 24×24
+  latest writer wins. Plus a `watchFolder` loop on the data folder
+  (guarded by `checking()`, so `herdr-app check` starts no watch) that pulls
+  external writes — an agent's note, another window's edit — into the
+  editor when nothing of the person's is in flight.
+  `mod.json` is `{ "place": "none" }`; art is one 24×24
   one-color stroke glyph (`icon.svg`) drawn in the Changes icon's style.
 - `mods/tabs-scratchpad/` — Herdr's shipped `tabs` mod forked: its own
   `win-*.svg` assets, a `padButton` pill bound to `layout.toggle`, and a
@@ -85,12 +99,20 @@ screen, saved as you type to one text file.
   Two people typing in the same moment can interleave.
 - The pad saves on `change` only: a hard crash within the same keystroke can
   lose that one keystroke; there is no timer save.
-- `readTextFile` caps at 1 MiB: the pad is not a place for megabyte notes.
+- `readTextFile` caps at 1 MiB: the pad is not a place for megabyte notes —
+  agents appending to it should keep it small.
 - `Textarea` must be given a height by its container (`flex_1().min_h(0)`
   inside a full-height column); left unsized it draws one input row tall.
-- Text seeded straight to the file after the pad has already started
-  appears only on the next reload; the editor in the window is what writes,
-  and it always wins.
+- External writes (an agent's note, another window's edit) load into the
+  editor within a moment, but only while nothing of the person's is unsaved:
+  mid-edit, the editor wins and the external text is dropped — agents should
+  re-check after writing while someone types. An external reload resets the
+  cursor, like any reload.
+- The file path is the agent interface, and it doesn't advertise itself:
+  whoever installs this mod should tell their own coding agent(s) the path
+  in the agent's global instructions (opencode:
+  `~/.config/opencode/AGENTS.md`; other agents: their equivalent), or the
+  convention only reaches agents working inside the mod's own repo.
 
 ## Done when
 
@@ -103,3 +125,7 @@ screen, saved as you type to one text file.
   mod folder (hot reload), and the text file on disk matches the pad.
 - The same text shows from a different space, and each space restores its
   own open/closed state when switched to.
+- With the pad open, appending from a shell
+  (`printf '%s\n' "- shell note" >> ~/.config/herdr-app/data/scratchpad/scratchpad.txt`)
+  appears in the pad without any reload — and typing in the pad at that same
+  moment still wins over the external write.

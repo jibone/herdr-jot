@@ -3,11 +3,16 @@
 // Scratchpad button and cmd-shift-s toggle the hidden "scratchpad" block.
 // The text lives in data/scratchpad/scratchpad.txt in the app's home, so it
 // survives restarts and hot reloads, and reads the same in every space.
+// That file is the pad's whole interface: coding agents append notes to it
+// (this repo's AGENTS.md gives them the path), and a watchFolder loop pulls
+// their edits into the editor whenever nothing of ours is in flight — a
+// person typing always wins.
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, Textarea, TextareaState } from "gpui-base";
-import { appHome, readTextFile, writeTextFile, theme, settings } from "herdr";
+import { appHome, readTextFile, writeTextFile, watchFolder, checking, theme, settings } from "herdr";
 
-const file = () => `${appHome()}/data/scratchpad/scratchpad.txt`;
+const dir = () => `${appHome()}/data/scratchpad`;
+const file = () => `${dir()}/scratchpad.txt`;
 // The terminals' mono font (Herdr's bundled default when unset).
 const mono = () => settings().font_family ?? "JetBrains Mono";
 
@@ -33,13 +38,31 @@ export default class Scratchpad extends View {
         this.state.set_value(text ?? "");
       }
     });
+    // External writers: an agent appending a note, another Herdr window's
+    // edit. Watch the file's folder and pull the disk text into the editor
+    // whenever nothing of ours is in flight — a person typing still wins,
+    // and the compare-to-expected save below reconciles the rest. Skipped
+    // under `herdr-app check`, which only renders once.
+    if (checking()) return;
+    cx.spawn(async (cx) => {
+      for (;;) {
+        await watchFolder(dir());
+        const text = await readTextFile(file()).catch(() => null);
+        if (text !== null && text !== this.expected && this.writing === null && this.pending === undefined) {
+          this.expected = text;
+          this.state.set_value(text);
+          cx.notify();
+        }
+      }
+    });
   }
 
   // One write in flight at a time, the latest text first: no self-races, no
   // lost keystrokes. writeTextFile is atomic and writes only while the file
-  // still matches the expected snapshot: another window's edit rejects ours,
-  // the disk becomes the new snapshot and the write is retried once — the
-  // latest writer wins, like Herdr's own shared state.
+  // still matches the expected snapshot: anyone else's edit (another window,
+  // an agent's note) rejects ours, the disk becomes the new snapshot and the
+  // write is retried once — the latest writer wins, like Herdr's own shared
+  // state.
   queue(cx) {
     this.pending = this.state.value();
     if (this.writing) return;

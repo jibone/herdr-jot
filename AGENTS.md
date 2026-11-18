@@ -28,6 +28,31 @@ the app rewrites those.
   clone them (`herdr-app do mod.clone '{"name":"...","as":"..."}'`)
   if you need a starting point.
 
+## The pad as a file (for coding agents)
+
+The scratchpad is a plain UTF-8 text file on this machine:
+
+```
+~/.config/herdr-app/data/scratchpad/scratchpad.txt
+```
+
+When the person says "note it down in the scratchpad", they mean: append a
+short note to that file. When they say "refer to the scratchpad", they mean:
+read it. The pad watches the file, so the note shows in the open pad within a
+moment (also while its pane is closed — it's there on the next open).
+
+- Append only: don't rewrite the whole file for one note.
+- Keep it small — the pad reads with a 1 MiB cap — and plain text.
+- Re-read right before writing; if the person is typing in the pad at that
+  same moment, their text wins and yours is dropped, so re-check after your
+  write while they're mid-edit.
+
+The path is machine-local (`appHome()`), so this is per-machine. This file
+only reaches agents working inside this repo: for the convention to work
+from the person's other projects, the path has to be in the coding agent's
+own global instructions (opencode: `~/.config/opencode/AGENTS.md`; any other
+agent: its equivalent — see RECIPE.md's Watch out).
+
 ## Layout
 
 A herdr.dev-style package: a layout integration plus the mods it needs.

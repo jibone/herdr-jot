@@ -17,6 +17,12 @@ reload.
   the same contents.
 - **Saved as you type** — every change is written atomically (latest wins);
   there's no save button and nothing to forget.
+- **Coding agents can read and write it** — the pad watches its own file:
+  an agent that appends a note shows up in the open pad within a moment
+  (while the pane is closed too — it's there on the next open). While
+  you're typing, your text wins. Tell your agent the path (opencode:
+  a line in `~/.config/opencode/AGENTS.md`; other agents: their
+  equivalent) and "note it in the scratchpad" just works, from any project.
 - **Native feel** — the pill matches the Files/Changes buttons, the pane is
   a card like the terminal panes, and each space remembers whether it had
   the pad open, exactly like Files and Changes.
@@ -47,7 +53,7 @@ graft two edits onto any main-derived layout:
 
 ```json
 { "id": "scratchpad", "type": "block", "content": { "mod": "scratchpad" },
-  "size": { "px": 340 }, "min": 260, "max": 900, "hidden": true }
+  "size": { "px": 420 }, "min": 260, "max": 900, "hidden": true }
 ```
 
 Then merge this repo's `keys.json` into `~/.config/herdr-app/keys.json`
@@ -78,6 +84,10 @@ herdr-app check ~/.config/herdr-app/mods/tabs-scratchpad
 - Switching to the fork resets Files/Changes per-space panel memory once.
 - The pad saves on every change; the text file is the source of truth
   (Herdr's `readTextFile` caps it at 1 MiB).
+- Agents don't find the pad's path by themselves: put it in your coding
+  agent's global instructions (opencode: `~/.config/opencode/AGENTS.md`;
+  others: their equivalent), or the convention only reaches agents working
+  inside this repo.
 
 For agents and contributors: read `AGENTS.md` first — it points at
 `~/.config/herdr-app/AGENTS.md`, the Herdr app's own agent guide, as the
