@@ -1,0 +1,6 @@
+# Auto-generated type declarations, written once by gpui-shell whenever
+# `herdr-app check` runs on a mod folder. Don't commit; regenerate by checking.
+mods/*/gpui-kit.d.ts
+
+# Editor support for the mods' runtime, also written once by gpui-shell:
+# jsconfig.json is yours after it lands — commit it or ignore it as you like.
