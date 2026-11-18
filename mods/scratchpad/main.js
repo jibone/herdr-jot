@@ -263,9 +263,9 @@ export default class Scratchpad extends View {
         return edit(div().id(`rule-${b.from}`).py(6)).child(div().h(1).bg(t.border));
       case "todo": {
         const box = div().id(`todo-box-${b.from}`).size(15).mt(2).flex_none().rounded(4).flex().items_center().justify_center()
-          .border(1).border_color(b.checked ? t.accent : t.border).bg(b.checked ? t.accent : "transparent")
-          .cursor_pointer().on_click((_e, c) => this.toggleTodo(b, c))
-          .when(b.checked, el => el.text_color(t.accent_foreground).text_size(10).font_semibold().child("✓"));
+          .border(1).border_color(b.checked ? t.accent : t.border)
+          .when(b.checked, el => el.bg(t.accent).text_color(t.accent_foreground).text_size(10).font_semibold().child("✓"))
+          .cursor_pointer().on_click((_e, c) => this.toggleTodo(b, c));
         return h_flex().id(`todo-${b.from}`).items_start().gap(8)
           .child(box)
           .child(edit(div().id(`todo-label-${b.from}`).flex_1().min_w(0).font_family(f)
