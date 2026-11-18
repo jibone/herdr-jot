@@ -1,31 +1,34 @@
-// The app-wide Scratchpad: one free-text pane, one text file, every space.
+// The app-wide Scratchpad: one notes pane, one text file, every space.
 // The layout places this mod ("place": "none"); the tabs-scratchpad fork's
 // Scratchpad button and cmd-shift-s toggle the hidden "scratchpad" block.
 //
-// The pad is a small block editor over that one file. Each line is a block —
-// a # heading, a --- rule, a - [ ] todo, a ``` fence of code, or plain
-// markdown text — drawn mono with no editor chrome: no line numbers, no
-// folding, nothing that looks like an editor. Click a block to edit it in
-// place; every keystroke splices straight into the document and saves
-// through the atomic writer, so the file is current at every moment. Click
-// a todo's box to tick it. The last empty line is always editable: the
-// pad's endless new line.
+// The pad works like Notion: the document is the editor. Every text line is
+// a live one-row textarea styled to look like bare text, so clicking
+// anywhere puts the caret exactly there — no modes, no conversions on blur.
+// Markdown structure converts while you type and never shows its syntax:
+// `# ` becomes a heading, `- [ ] ` a tickable todo, ``` a code editor,
+// --- a rule. Enter splits the block; paste expands into blocks. The
+// heading/todo editors hold only the content — the prefixes live in the
+// file, spliced back on every keystroke and saved atomically.
 import { View, div } from "gpui-kit";
-import { v_flex, h_flex, Textarea, TextareaState, Editor, EditorState, TextView } from "gpui-base";
+import { v_flex, h_flex, Textarea, TextareaState, Editor, EditorState } from "gpui-base";
 import { appHome, readTextFile, writeTextFile, theme, settings } from "herdr";
 
 const file = () => `${appHome()}/data/scratchpad/scratchpad.txt`;
 const mono = () => settings().font_family ?? "JetBrains Mono";
-const hash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h ^ s.charCodeAt(i)) >>> 0; return h.toString(36); };
+const HINT = "# heading · - [ ] todo · ``` code";
+const HEAD = /^```/;
+const CLOSE = /^```\s*$/;
 
-function lineBlock(raw, at) {
-  let m = raw.match(/^(#{1,6})\s+(.*)$/);
-  if (m) return { kind: "h", from: at, to: at, level: Math.min(m[1].length, 3), text: m[2] };
-  if (/^---+\s*$/.test(raw)) return { kind: "rule", from: at, to: at };
-  m = raw.match(/^(\s*)([-*+])\s+\[([ xX])\]\s?(.*)$/);
-  if (m) return { kind: "todo", from: at, to: at, checked: m[3] !== " ", label: m[4] };
-  if (raw === "") return { kind: "spacer", from: at, to: at };
-  return { kind: "text", from: at, to: at, text: raw };
+// What a plain text line turns into the moment it is typed or pasted.
+function classifyLive(value) {
+  let m = value.match(/^(#{1,3})(\s+)(.*)$/);
+  if (m) return { kind: "h", level: m[1].length, cut: m[0].length - m[3].length };
+  m = value.match(/^([-*+])(\s*)\[([ xX])\](\s?)(.*)$/);
+  if (m) return { kind: "todo", checked: m[3] !== " ", bullet: m[1], cut: m[0].length - m[5].length };
+  if (HEAD.test(value)) return { kind: "code" };
+  if (/^---+\s*$/.test(value)) return { kind: "rule" };
+  return null;
 }
 
 // Blocks cover `lines[base .. base + lines.length)`. A fence without its
@@ -35,15 +38,19 @@ function parseLines(lines, base, self, cx) {
   let i = 0;
   while (i < lines.length) {
     const raw = lines[i];
-    if (/^```/.test(raw)) {
+    if (HEAD.test(raw)) {
       let j = i + 1;
-      while (j < lines.length && !/^```\s*$/.test(lines[j])) j++;
+      while (j < lines.length && !CLOSE.test(lines[j])) j++;
       const closed = j < lines.length;
       out.push(self.codeBlock(base + i, (closed ? j : lines.length - 1) + base, closed, closed ? undefined : base + lines.length, cx));
       i = (closed ? j : lines.length - 1) + 1;
       continue;
     }
-    out.push(lineBlock(lines[i], base + i));
+    let m = raw.match(/^(#{1,3})\s+(.*)$/);
+    if (m) out.push(self.hBlock(base + i, m[1].length, m[2]));
+    else if ((m = raw.match(/^([-*+])(\s*)\[([ xX])\]\s?(.*)$/))) out.push(self.todoBlock(base + i, m));
+    else if (/^---+\s*$/.test(raw)) out.push({ kind: "rule", from: base + i, to: base + i });
+    else out.push(self.textBlock(raw, base + i, false));
     i++;
   }
   return out;
@@ -53,14 +60,63 @@ export default class Scratchpad extends View {
   init(_props, cx) {
     this.lines = null;      // the document, line by line — null until the file loads
     this.blocks = [];       // parsed blocks; stable objects, resolved by identity
-    this.edit = null;       // { block, state } while one block is being edited
     this.expected = null;
     this.pending = undefined;
     this.writing = null;
+    this.projecting = false;   // programmatic set_value: don't re-classify
     cx.spawn(async (cx) => {
       const text = await readTextFile(file()).catch(() => null);
       this.setDoc(text ?? "", cx);
     });
+  }
+
+  // ---- block factories --------------------------------------------------
+
+  textState(value, placeholder) {
+    const state = TextareaState.new(placeholder ? { value, placeholder } : { value });
+    state.set_auto_grow(1, 1);   // one row, always: Enter splits instead of growing
+    return state;
+  }
+
+  wire(b, state) {
+    state.on("change", (_e, c) => { if (!this.projecting) this.onBlockChange(b, c); });
+    return state;
+  }
+
+  textBlock(raw, at, tail) {
+    const b = { kind: "text", from: at, to: at, tail };
+    b.state = this.wire(b, this.textState(raw, tail ? HINT : undefined));
+    return b;
+  }
+
+  hBlock(at, level, title) {
+    const b = { kind: "h", from: at, to: at, level, wasNonEmpty: title !== "" };
+    b.state = this.wire(b, this.textState(title));
+    return b;
+  }
+
+  todoBlock(at, m) {
+    const b = { kind: "todo", from: at, to: at, checked: m[3] !== " ", bullet: m[1] };
+    b.state = this.wire(b, this.textState(m[4]));
+    return b;
+  }
+
+  codeBlock(from, to, closed, contentEnd, cx) {
+    const b = { kind: "code", from, to, closed, lang: this.lines[from].replace(HEAD, "").trim() };
+    const t = theme();
+    const opts = {
+      value: this.lines.slice(from + 1, contentEnd ?? this.lines.length).join("\n"),
+      line_numbers: false,   // code that doesn't look like an editor
+      folding: false,
+      soft_wrap: false,      // long lines scroll sideways instead
+      font_family: mono(),
+      font_size: 12,
+      syntax: { keyword: t.ansi5, string: t.ansi2, comment: t.dim, function: t.ansi4, type: t.ansi3, number: t.ansi1, constant: t.ansi6 },
+    };
+    if (b.lang) opts.language = b.lang;
+    b.state = EditorState.new(opts);
+    b.state.on("change", (_e, c) => this.spliceCode(b, c));
+    return b;
   }
 
   // ---- the document ------------------------------------------------------
@@ -88,98 +144,138 @@ export default class Scratchpad extends View {
     this.ensureTail(cx);
   }
 
-  // The pad always ends with one editable empty line: its endless new line.
+  // The pad always ends with one editable empty line: its endless cursor.
   ensureTail(cx) {
     if (this.lines[this.lines.length - 1] !== "") {
       this.lines.push("");
-      this.blocks.push({ kind: "tail", from: this.lines.length - 1, to: this.lines.length - 1 });
+      this.blocks.push(this.textBlock("", this.lines.length - 1, true));
       this.save(cx);
-    } else {
-      const last = this.blocks[this.blocks.length - 1];
-      if (last && last.to === this.lines.length - 1 && (last.kind === "spacer" || last.kind === "tail")) last.kind = "tail";
+      return true;
     }
+    const last = this.blocks[this.blocks.length - 1];
+    if (last && last.kind === "text" && last.to === this.lines.length - 1) last.tail = true;
+    return false;
   }
 
-  codeBlock(from, to, closed, contentEnd, cx) {
-    const b = { kind: "code", from, to, closed, lang: this.lines[from].replace(/^```/, "").trim() };
-    const t = theme();
-    const opts = {
-      value: this.lines.slice(from + 1, contentEnd ?? this.lines.length).join("\n"),
-      line_numbers: false,   // code that doesn't look like an editor
-      folding: false,
-      soft_wrap: false,      // long lines scroll sideways instead
-      font_family: mono(),
-      font_size: 12,
-      syntax: { keyword: t.ansi5, string: t.ansi2, comment: t.dim, function: t.ansi4, type: t.ansi3, number: t.ansi1, constant: t.ansi6 },
-    };
-    if (b.lang) opts.language = b.lang;
-    b.state = EditorState.new(opts);
-    b.state.on("change", (_e, c) => this.spliceCode(b, c));
-    return b;
-  }
-
-  // ---- editing -----------------------------------------------------------
-
-  // Click a block: it becomes a textarea holding its raw text. Every
-  // keystroke splices into the document and saves; blur (or Escape, if the
-  // key bubbles) commits: the block re-splits where its lines demand it.
-  startEdit(b, cx) {
-    if (this.edit) {
-      if (this.edit.block === b) return;
-      this.commitEdit(cx);
-    }
-    if (this.blocks.indexOf(b) < 0) return;
-    const raw = this.lines.slice(b.from, b.to + 1).join("\n");
-    const state = TextareaState.new({ value: raw, placeholder: "# heading · - [ ] todo · ``` code" });
-    state.set_soft_wrap(true);
-    state.set_auto_grow(1, 60);
-    state.on("change", (_e, c) => this.spliceEdit(c));
-    state.on("blur", (_e, c) => { if (this.edit?.state === state) this.commitEdit(c); });
-    this.edit = { block: b, state };
-    state.focus();
-    state.set_selected_range({ start: raw.length, end: raw.length });
-    cx.notify();
-  }
-
-  spliceEdit(cx) {
-    const e = this.edit;
-    if (!e) return;
-    const b = e.block;
-    const next = e.state.value().split("\n");
-    this.lines.splice(b.from, b.to - b.from + 1, ...next);
-    b.to = b.from + next.length - 1;   // keep this block's range current for the next keystroke
+  // The file line for a block: prefixes live here, never in the editor.
+  writeBlock(b, value, cx) {
+    if (b.kind === "h") this.lines[b.from] = "#".repeat(b.level) + " " + value;
+    else if (b.kind === "todo") this.lines[b.from] = `${b.bullet} [${b.checked ? "x" : " "}] ${value}`;
+    else this.lines[b.from] = value;
     this.save(cx);
   }
 
-  commitEdit(cx) {
-    const e = this.edit;
-    if (!e) return;
-    this.edit = null;
-    const b = e.block;
-    // this.lines[b.from..b.to] already equals the editor's text (spliced per
-    // keystroke): re-split that one block, leaving every other block object
-    // — and its place — alone.
-    const rawLines = e.state.value().split("\n");
-    const oldLen = b.to - b.from + 1;
-    const sub = parseLines(rawLines, b.from, this, cx);
+  // ---- typing ------------------------------------------------------------
+
+  onBlockChange(b, cx) {
+    if (this.projecting) return;
+    const value = b.state.value();
+    if (value.includes("\n")) { this.expand(b, value, cx); return; }
+    if (b.kind === "text") {
+      const conv = classifyLive(value);
+      if (conv) { this.convert(b, conv, value, cx); return; }
+    } else if (b.kind === "h") {
+      // Clearing a heading's text gives the line back to plain text.
+      if (value === "" && b.wasNonEmpty) {
+        b.kind = "text";
+        this.writeBlock(b, "", cx);
+        cx.notify();
+        return;
+      }
+      b.wasNonEmpty = value !== "";
+    }
+    this.writeBlock(b, value, cx);
+    if (this.ensureTail(cx)) cx.notify();
+  }
+
+  // Enter or a paste: the newlines become new blocks at once.
+  expand(b, value, cx) {
+    const idx = this.blocks.indexOf(b);
+    const next = value.split("\n");
+    this.lines.splice(b.from, b.to - b.from + 1, ...next);
+    const sub = parseLines(next, b.from, this, cx);
     let extra = 0;
     const last = sub[sub.length - 1];
     if (last && last.kind === "code" && !last.closed) {
-      // A fence typed without its closer would swallow the pad on reload:
+      // A fence pasted without its closer would swallow the pad on reload:
       // close it for the person now.
       this.lines.splice(last.to + 1, 0, "```");
       last.to += 1;
       last.closed = true;
       extra = 1;
+      this.save(cx);
     }
-    const idx = this.blocks.indexOf(b);
+    const oldTo = b.to;
     this.blocks.splice(idx, 1);
-    const shift = rawLines.length - oldLen + extra;
-    for (const o of this.blocks) if (o.from > b.to) { o.from += shift; o.to += shift; }
+    const shift = next.length - 1 + extra;
+    for (const o of this.blocks) if (o.from > oldTo) { o.from += shift; o.to += shift; }
     this.blocks.splice(idx, 0, ...sub);
+    cx.spawn(async () => b.state.release());   // not inside its own handler
     this.save(cx);
     this.ensureTail(cx);
-    e.state.release();
+    // The caret lands where the typing continues: the last new block.
+    for (let j = sub.length - 1; j >= 0; j--) {
+      const target = sub[j];
+      if (target.state) {
+        const text = target.state.value();
+        target.state.focus();
+        target.state.set_selected_range({ start: text.length, end: text.length });
+        break;
+      }
+    }
+    cx.notify();
+  }
+
+  // `# `, `- [ ] `, ``` , --- : the block becomes what was typed, prefix
+  // stripped from the editor so only the content shows.
+  convert(b, conv, value, cx) {
+    if (conv.kind === "code") {
+      const idx = this.blocks.indexOf(b);
+      const lang = value.replace(HEAD, "").trim();
+      this.lines.splice(b.from, b.to - b.from + 1, value, "```");
+      const nb = this.codeBlock(b.from, b.from + 1, true, undefined, cx);
+      this.blocks.splice(idx, 1);
+      for (const o of this.blocks) if (o.from > b.to) { o.from++; o.to++; }
+      this.blocks.splice(idx, 0, nb);
+      cx.spawn(async () => b.state.release());
+      this.save(cx);
+      this.ensureTail(cx);
+      nb.state.focus();
+      cx.notify();
+      return;
+    }
+    if (conv.kind === "rule") {
+      b.kind = "rule";
+      cx.spawn(async () => b.state.release());
+      b.state = null;
+      this.writeBlock(b, value, cx);
+      cx.notify();
+      return;
+    }
+    b.kind = conv.kind;
+    if (conv.kind === "h") b.level = conv.level;
+    if (conv.kind === "todo") { b.checked = conv.checked; b.bullet = conv.bullet; }
+    b.wasNonEmpty = false;
+    this.projecting = true;
+    b.state.set_value(value.slice(conv.cut));
+    b.state.set_selected_range({ start: 0, end: 0 });
+    this.projecting = false;
+    this.writeBlock(b, b.state.value(), cx);
+    cx.notify();
+  }
+
+  // Click a rule to get its line back as text.
+  ruleToText(b, cx) {
+    b.kind = "text";
+    b.tail = false;
+    b.state = this.wire(b, this.textState(this.lines[b.from]));
+    b.state.focus();
+    cx.notify();
+  }
+
+  toggleTodo(b, cx) {
+    b.checked = !b.checked;
+    this.writeBlock(b, b.state.value(), cx);
     cx.notify();
   }
 
@@ -195,12 +291,43 @@ export default class Scratchpad extends View {
     this.save(cx);
   }
 
-  toggleTodo(b, cx) {
-    const checked = !b.checked;
-    this.lines[b.from] = this.lines[b.from].replace(/\[( |x|X)\]/, checked ? "[x]" : "[ ]");
-    b.checked = checked;
-    this.save(cx);
-    cx.notify();
+  // ---- keyboard between blocks (best effort: the native textarea is the
+  // first handler; what it doesn't use bubbles to the block's wrapper) ----
+
+  blockKey(b, e, cx) {
+    if (!b.state) return;
+    const key = e.key;
+    const i = this.blocks.indexOf(b);
+    if (key === "up" || key === "arrowup" || key === "down" || key === "arrowdown") {
+      const step = key === "up" || key === "arrowup" ? -1 : 1;
+      let j = i + step;
+      while (j >= 0 && j < this.blocks.length && !this.blocks[j].state) j += step;
+      if (j < 0 || j >= this.blocks.length) return;
+      const target = this.blocks[j];
+      const pos = Math.min(b.state.selected_range().start, target.state.value().length);
+      target.state.focus();
+      target.state.set_selected_range({ start: pos, end: pos });
+      cx.stop_propagation();
+      return;
+    }
+    if (key === "backspace" && b.kind === "text" && b.state.value() === "" && i > 0) {
+      // An emptied line joins the one above: caret to its end, line removed.
+      let j = i - 1;
+      while (j >= 0 && !this.blocks[j].state) j--;
+      if (j < 0) return;
+      const prev = this.blocks[j];
+      const pos = prev.state.value().length;
+      prev.state.focus();
+      prev.state.set_selected_range({ start: pos, end: pos });
+      this.lines.splice(b.from, 1);
+      this.blocks.splice(i, 1);
+      for (const o of this.blocks) if (o.from > b.to) { o.from--; o.to--; }
+      cx.spawn(async () => b.state.release());
+      this.save(cx);
+      this.ensureTail(cx);
+      cx.stop_propagation();
+      cx.notify();
+    }
   }
 
   // ---- saving ------------------------------------------------------------
@@ -248,46 +375,32 @@ export default class Scratchpad extends View {
   }
 
   block(b, t, f) {
-    if (this.edit && this.edit.block === b) {
-      return div().id(`edit-${b.from}`)
-        .on_key_down((ev, c) => { if (ev.keystroke === "escape") this.commitEdit(c); })
-        .child(Textarea.new(this.edit.state).font_family(f).text_size(13));
-    }
-    const edit = (el) => el.cursor_pointer().on_click((_e, c) => this.startEdit(b, c));
+    const keys = (el) => el.on_key_down((e, c) => this.blockKey(b, e, c));
     switch (b.kind) {
       case "h":
-        return edit(div().id(`h-${b.from}`).py(b.level === 1 ? 7 : b.level === 2 ? 5 : 4)
-          .font_family(f).font_semibold().text_size(b.level === 1 ? 19 : b.level === 2 ? 16.5 : 15)
-          .child(b.text || "\u00a0"));
-      case "rule":
-        return edit(div().id(`rule-${b.from}`).py(6)).child(div().h(1).bg(t.border));
+        return keys(div().id(`h-${b.from}`).py(b.level === 1 ? 7 : b.level === 2 ? 5 : 4))
+          .child(Textarea.new(b.state).font_family(f).font_semibold().text_size(b.level === 1 ? 19 : b.level === 2 ? 16.5 : 15));
       case "todo": {
         const box = div().id(`todo-box-${b.from}`).size(15).mt(2).flex_none().rounded(4).flex().items_center().justify_center()
           .border(1).border_color(b.checked ? t.accent : t.border)
           .when(b.checked, el => el.bg(t.accent).text_color(t.accent_foreground).text_size(10).font_semibold().child("✓"))
           .cursor_pointer().on_click((_e, c) => this.toggleTodo(b, c));
-        return h_flex().id(`todo-${b.from}`).items_start().gap(8)
+        return keys(h_flex().id(`todo-${b.from}`).items_start().gap(8))
           .child(box)
-          .child(edit(div().id(`todo-label-${b.from}`).flex_1().min_w(0).font_family(f)
+          .child(Textarea.new(b.state).font_family(f).flex_1().min_w(0)
             .text_color(b.checked ? t.dim : t.foreground)
-            .when(b.checked, el => el.line_through())
-            .child(b.label || "\u00a0")));
+            .when(b.checked, el => el.line_through()));
       }
       case "code":
         return v_flex().id(`code-${b.from}`).my(4).rounded(8).overflow_hidden().bg(t.surface).border_1().border_color(t.border)
           .child(Editor.new(b.state));
-      case "tail":
-        return edit(h_flex().id("pad-tail").h(24).items_center().gap(6)
-          .child(div().text_size(13).text_color(t.dim).child("+"))
-          .child(div().text_size(11.5).text_color(t.dim).child("add a line")));
-      case "spacer":
-        return div().id(`space-${b.from}`).h(9);
-      default:
-        // Plain lines pass through TextView.markdown, so **bold**, `code`
-        // and links work inline; the id carries a content hash so a changed
-        // line is always a fresh element.
-        return edit(div().id(`text-${b.from}`).py(1))
-          .child(TextView.markdown(`sp-${b.from}-${hash(b.text)}`, b.text).selectable(false).font_family(f).text_size(13));
+      case "rule":
+        return div().id(`rule-${b.from}`).py(6).cursor_pointer()
+          .on_click((_e, c) => this.ruleToText(b, c))
+          .child(div().h(1).bg(t.border));
+      default:   // text: the line is the editor
+        return keys(div().id(`t-${b.from}`).py(2))
+          .child(Textarea.new(b.state).font_family(f).text_size(13));
     }
   }
 }

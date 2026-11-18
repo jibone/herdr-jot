@@ -13,71 +13,78 @@ you type to one text file, still there after a restart or a hot reload.
   falling back to JetBrains Mono) — a notes pane that shares its type with
   the terminals beside it, with no editor chrome anywhere: no line numbers,
   no folding, no gutter.
-- The document renders as blocks on the card's theme background (1 px
-  border, 10 px corners, a 42 px header with "Scratchpad" and the dim
-  right-aligned "one pad · every space"):
+- The card: theme background, 1 px border, 10 px corners, a 42 px header with
+  "Scratchpad" and the dim right-aligned "one pad · every space".
+- The document is a column of blocks:
   - `# / ## / ###` headings: semibold, 19 / 16.5 / 15 px.
-  - `---`: a 1 px theme-border rule.
+  - `---` rules: a 1 px theme-border line.
   - `- [ ]` / `- [x]` todos: a 15 px checkbox (accent-filled with a ✓ when
     done), the label struck through and dimmed when done.
-  - ```` ``` ```` fences: a code card on theme surface with syntax coloring
+  - ```` ``` ```` fences: code cards on theme surface with syntax coloring
     from the terminal's ANSI palette, 12 px, no line numbers, no folding;
     long lines scroll sideways, they never wrap.
-  - plain lines through `TextView.markdown`, so `**bold**`, `` `code` ``
-    and links render inline.
-  - the pad always ends with a dim "+ add a line" row.
+  - the pad always ends with an empty line carrying a dim hint:
+    `# heading · - [ ] todo · ``` code`.
 
 ## How it behaves
 
-- Click any block: it becomes a textarea holding its raw text (`# Header`,
-  `- [ ] milk`) with the caret at the end. Every keystroke splices into the
-  document and saves atomically — the file is current at every moment.
-- Commit is blur, click-away, or Escape: the block then re-splits where its
-  lines demand it, so Enter inside a heading splits it into blocks, and a
-  pasted fence becomes a code card the moment you click away.
-- Todos tick with one click on the box (the label's own click starts its
-  edit). Ticking saves immediately.
-- Code blocks are edited in place — the fences never show; click into the
-  code and type. A fence typed without its closer is closed automatically
-  on commit, so it can never swallow the pad on reload.
-- The last empty line is always editable: the pad's endless new line.
+The document is the editor, the way Notion works:
+
+- Every text line is a live one-row text field styled to look like bare
+  text. Click anywhere and the caret lands exactly there; just type.
+- Structure converts mid-keystroke and never shows its syntax: typing
+  `# ` instantly restyles the block as a heading with the prefix stripped
+  (it lives in the file, spliced back on every keystroke). `- [ ] ` becomes
+  a todo, ``` drops the caret into a fresh code editor, `---` becomes a
+  rule. Clearing a heading's text gives the line back to plain text.
+- Enter splits the block and the caret lands on the new empty line below.
+  Paste expands at once: paragraphs become blocks, a pasted fence becomes a
+  live code card (an unclosed fence is closed for you).
+- Todos tick with one click on the box, saved immediately.
+- Code blocks are edited in place; the fences never show.
+- Click a rule to get its line back as editable text.
+- Everything saves per keystroke, atomically, to one text file.
 - The pill and `cmd-shift-s` toggle the pane; each space remembers whether
   it had the pad open, exactly like Files and Changes.
 
 ## Built from
 
 - `mods/scratchpad/` — the pane. The file's lines parse into block objects
-  (`kind`, `from`, `to`, and per-kind fields); blocks are stable objects,
-  so click handlers resolve them by `indexOf` at event time, never by a
-  stale index. Editing splices `this.lines` per keystroke; commit re-splits
-  just that block (`parseLines` over its new lines) and shifts later
-  blocks' offsets. A code block owns a live `EditorState.new({
-  line_numbers: false, folding: false, soft_wrap: false, font_family,
-  font_size: 12, syntax: <theme ANSI colors> })` created at parse or commit
-  time — host calls, never in render — and released when replaced. Inline
-  editing creates one `TextareaState` (`set_soft_wrap(true)`,
-  `set_auto_grow(1, 60)`) per edit. Text lines render through
-  `TextView.markdown`, their ids carrying a content hash. Mono is
+  (`kind`, `from`, `to`, per-kind fields); blocks are stable objects, so
+  handlers resolve them by identity, never by a stale index. Each text-ish
+  block owns a retained `TextareaState` (`set_auto_grow(1, 1)`, mono via
+  `.font_family`), created at parse or block-creation time — host calls,
+  never in render — and released when a block is replaced. Heading and
+  todo editors hold only the content; `writeBlock` splices the prefix back
+  into the file line and saves. `onBlockChange` classifies live
+  (`classifyLive`), splits on newlines (`expand` re-parses the block's new
+  lines into a block sequence and focuses the last), and guards
+  programmatic `set_value` with a `projecting` flag. Code blocks own an
+  `EditorState.new({ line_numbers: false, folding: false, soft_wrap: false,
+  font_family, font_size: 12, syntax: <theme ANSI colors> })`, splicing
+  their content between the fences on change. Mono is
   `settings().font_family ?? "JetBrains Mono"`. Saving is one serialized
   writer loop over `writeTextFile` (atomic, compare-to-expected, latest
   wins) — unchanged from the first build.
 - `mods/tabs-scratchpad/` — unchanged from the first build.
 - `layouts/main-copy.json` — the daily layout; the pad block's default
-  width is now 400 px.
+  width is 400 px.
 - `keys.json`: `"layout:main-copy": { "cmd-shift-s": ... }` as before.
 - Art: the 24×24 one-color notepad glyph (`icon.svg`), unchanged.
 
 ## Watch out
 
-- No cross-block undo: undo works inside the focused editor or textarea;
-  a commit or a todo tick is not undoable.
-- No arrow-key navigation between blocks — the pad is mouse-first.
-- Escape-commit depends on the key bubbling out of the textarea; blur and
-  click-away always commit.
+- Undo is per block (inside the focused field); a conversion or a tick
+  isn't undoable, and there is no drag-handle reordering or multi-block
+  selection.
+- Inline emphasis shows raw (`**bold**` stays literal) — the trade for
+  every line being live-editable with zero swaps.
+- Arrow-up/down between blocks and Backspace joining an emptied line into
+  the one above are best effort: they ride `on_key_down` on the block's
+  wrapper, which only sees what the native field doesn't consume. Enter,
+  click and paste flows are guaranteed regardless.
 - Typing a ``` line inside a code block's content would close the block on
   the next reload (the live view stays as it was) — don't.
-- Clicking a link inside a text line may open it and start that line's
-  edit at once.
 - `herdr-app check` validates the loading render; blocks appear after the
   async file read, so the live window is where content is exercised.
 - Two windows editing at once: atomic compare-to-expected writes, latest
@@ -88,12 +95,14 @@ you type to one text file, still there after a restart or a hot reload.
 
 - `herdr-app check` passes and `herdr-app status` shows no errors with the
   pad open.
-- Typing in a block saves per keystroke (the file on disk matches), and the
-  pad survives a restart and a hot reload.
-- `# ` renders as a heading, `---` as a rule, `- [ ]` as a tickable todo,
-  and a pasted fence as a code card — each from the commit that created it.
-- A fence typed without its closer closes itself; nothing below it is
-  swallowed after a reload.
+- Clicking anywhere in a line puts the caret there; typing saves per
+  keystroke and the pad survives a restart and a hot reload.
+- `# ` turns into a heading while typing, `- [ ] ` into a tickable todo,
+  ``` into a code editor with the caret inside, `---` into a rule — each
+  without its syntax ever showing.
+- Enter splits; paste expands; a pasted fence becomes a code card; an
+  unclosed fence closes itself.
+- Clearing a heading reverts it to text; clicking a rule makes it editable.
 - The same text shows from a different space; each space restores its own
   open/closed state.
 - `cmd-shift-s` and the pill still toggle the pane.
