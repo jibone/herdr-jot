@@ -5,24 +5,28 @@ A **Herdr app plugin**: one Scratchpad for the whole app.
 ![Scratchpad](preview.png)
 
 A "Scratchpad" pill sits in the tab bar next to Files and Changes. Click it
-(or press `cmd-shift-s`) and a free-text pane opens on the right side of the
-window. It's one pad for the whole app: the same text in every space, saved
-as you type to a single text file, still there after a restart or a hot
-reload.
+(or press `cmd-shift-s`) and a notes pane opens on the right side of the
+window. The text renders as blocks — headings, rules, tickable todos, code
+fences — and you edit any block by clicking it where it sits. It's one pad
+for the whole app: the same text in every space, saved as you type to a
+single text file, still there after a restart or a hot reload.
 
 ## What you get
 
 - **One pad, every space** — the text lives in
   `~/.config/herdr-app/data/scratchpad/scratchpad.txt`, so every space sees
   the same contents.
-- **Saved as you type** — every change is written atomically (latest wins);
-  there's no save button and nothing to forget.
+- **Markdown blocks, not an editor** — `#` headings, `---` rules, `- [ ]`
+  todos you tick by clicking, and ``` code fences with syntax coloring, all
+  in mono with no line numbers. Plain lines keep `**bold**`, `` `code` ``
+  and links.
+- **Click to edit anything** — a block becomes its own text box where it
+  sits; every keystroke saves atomically. The pad always ends with an
+  empty line to type into.
 - **Native feel** — the pill matches the Files/Changes buttons, the pane is
   a card like the terminal panes, and each space remembers whether it had
   the pad open, exactly like Files and Changes.
 - **A keyboard way in** — `cmd-shift-s` toggles it while the layout shows.
-- **Plain wrapped text** — a comfortable textarea in your theme, light or
-  dark.
 
 ## Install
 
@@ -75,6 +79,8 @@ herdr-app check ~/.config/herdr-app/mods/tabs-scratchpad
   version it was cloned from — if Herdr ships tab-bar changes, re-clone and
   re-apply (the fork's header comment lists its change set).
 - Switching to the fork resets Files/Changes per-space panel memory once.
+- Block editing is mouse-first: undo works inside the focused block, not
+  across blocks, and there's no arrow-key navigation between blocks yet.
 - The pad saves on every change; the text file is the source of truth
   (Herdr's `readTextFile` caps it at 1 MiB).
 
