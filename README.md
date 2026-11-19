@@ -36,6 +36,25 @@ reload.
 Requires the [Herdr app](https://herdr.dev) and a layout derived from
 Herdr's shipped `main`.
 
+**The agent way** — one line, the same pattern as the mods listed on
+[herdr.dev/mods](https://herdr.dev/gallery/?type=mods). Tell your coding
+agent:
+
+```
+Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/jibone/herdr-jot
+```
+
+It reads `RECIPE.md` and every file first, tells you what the pad touches
+(one text file, `~/.config/herdr-app/data/jot/jot.txt` — no network,
+nothing executed), then copies the two mods into
+`~/.config/herdr-app/mods/`, grafts the layout edits onto your own
+main-derived layout (not `layouts/main-copy.json` — that one is personal
+to this machine), merges the key into `~/.config/herdr-app/keys.json`
+(renaming the `layout:main-copy` section to your layout's name), runs
+`herdr-app check` on both mods and tries the pill in the app.
+
+**By hand instead:**
+
 ```sh
 # 1. the two mods
 rsync -a mods/ ~/.config/herdr-app/mods/
@@ -57,7 +76,8 @@ graft two edits onto any main-derived layout:
 ```
 
 Then merge this repo's `keys.json` into `~/.config/herdr-app/keys.json`
-(check the key isn't already bound first), and verify:
+(rename the `layout:main-copy` section to your layout's name, and check
+`cmd-shift-s` isn't already bound first), and verify:
 
 ```sh
 herdr-app check ~/.config/herdr-app/mods/jot
@@ -88,6 +108,10 @@ herdr-app check ~/.config/herdr-app/mods/tabs-jot
   agent's global instructions (opencode: `~/.config/opencode/AGENTS.md`;
   others: their equivalent), or the convention only reaches agents working
   inside this repo.
+- Shared the way the app documents — a public repo with `RECIPE.md`,
+  `preview.png` and the `herdr-mod` topic — so it lists at
+  [herdr.dev/mods](https://herdr.dev/gallery/?type=mods) on the gallery's
+  next crawl.
 
 For agents and contributors: read `AGENTS.md` first — it points at
 `~/.config/herdr-app/AGENTS.md`, the Herdr app's own agent guide, as the
