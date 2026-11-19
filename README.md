@@ -1,10 +1,10 @@
-# herdr-scratchpad
+# herdr-jot
 
-A **Herdr app plugin**: one Scratchpad for the whole app.
+A **Herdr app plugin**: one Jot pad for the whole app.
 
-![Scratchpad](preview.png)
+![Jot](preview.png)
 
-A "Scratchpad" pill sits in the tab bar next to Files and Changes. Click it
+A "Jot" pill sits in the tab bar next to Files and Changes. Click it
 (or press `cmd-shift-s`) and a free-text pane opens on the right side of the
 window. It's one pad for the whole app: the same text in every space, saved
 as you type to a single text file, still there after a restart or a hot
@@ -13,7 +13,7 @@ reload.
 ## What you get
 
 - **One pad, every space** — the text lives in
-  `~/.config/herdr-app/data/scratchpad/scratchpad.txt`, so every space sees
+  `~/.config/herdr-app/data/jot/jot.txt`, so every space sees
   the same contents.
 - **Saved as you type** — every change is written atomically (latest wins);
   there's no save button and nothing to forget.
@@ -22,7 +22,7 @@ reload.
   (while the pane is closed too — it's there on the next open). While
   you're typing, your text wins. Tell your agent the path (opencode:
   a line in `~/.config/opencode/AGENTS.md`; other agents: their
-  equivalent) and "note it in the scratchpad" just works, from any project.
+  equivalent) and "jot it down" just works, from any project.
 - **Native feel** — the pill matches the Files/Changes buttons, the pane is
   a card like the terminal panes, and each space remembers whether it had
   the pad open, exactly like Files and Changes.
@@ -48,11 +48,11 @@ rsync -a layouts/ ~/.config/herdr-app/layouts/
 of `main` with my own mods wired in). To install on your own setup instead,
 graft two edits onto any main-derived layout:
 
-- point the `tabs` block at `"tabs-scratchpad"`
+- point the `tabs` block at `"tabs-jot"`
 - add the hidden right-side block to `work-body`, after `panel`:
 
 ```json
-{ "id": "scratchpad", "type": "block", "content": { "mod": "scratchpad" },
+{ "id": "jot", "type": "block", "content": { "mod": "jot" },
   "size": { "px": 420 }, "min": 260, "max": 900, "hidden": true }
 ```
 
@@ -60,16 +60,16 @@ Then merge this repo's `keys.json` into `~/.config/herdr-app/keys.json`
 (check the key isn't already bound first), and verify:
 
 ```sh
-herdr-app check ~/.config/herdr-app/mods/scratchpad
-herdr-app check ~/.config/herdr-app/mods/tabs-scratchpad
+herdr-app check ~/.config/herdr-app/mods/jot
+herdr-app check ~/.config/herdr-app/mods/tabs-jot
 ```
 
 ## Repo layout
 
 | Path | What |
 |---|---|
-| `mods/scratchpad/` | the pane: `main.js`, `mod.json`, `icon.svg` |
-| `mods/tabs-scratchpad/` | fork of Herdr's shipped tab bar: the Scratchpad pill + per-space open memory |
+| `mods/jot/` | the pad: `main.js`, `mod.json`, `icon.svg` |
+| `mods/tabs-jot/` | fork of Herdr's shipped tab bar: the Jot pill + per-space open memory |
 | `layouts/main-copy.json` | this machine's daily layout, grafted — `RECIPE.md` describes the generic graft |
 | `keys.json` | the `cmd-shift-s` binding to merge by hand |
 | `RECIPE.md` | the brief to rebuild the whole plugin from scratch |
@@ -78,7 +78,7 @@ herdr-app check ~/.config/herdr-app/mods/tabs-scratchpad
 ## Notes & trade-offs
 
 - Herdr's own layouts and mods are read-only; putting a pill in that tab
-  bar means forking it. The fork (`tabs-scratchpad`) is frozen at the
+  bar means forking it. The fork (`tabs-jot`) is frozen at the
   version it was cloned from — if Herdr ships tab-bar changes, re-clone and
   re-apply (the fork's header comment lists its change set).
 - Switching to the fork resets Files/Changes per-space panel memory once.

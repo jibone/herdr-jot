@@ -79,7 +79,7 @@
           "id": "tabs",
           "type": "block",
           "content": {
-            "mod": "tabs-scratchpad"
+            "mod": "tabs-jot"
           },
           "size": {
             "px": 42
@@ -172,10 +172,10 @@
               "hidden": true
             },
             {
-              "id": "scratchpad",
+              "id": "jot",
               "type": "block",
               "content": {
-                "mod": "scratchpad"
+                "mod": "jot"
               },
               "size": {
                 "px": 420

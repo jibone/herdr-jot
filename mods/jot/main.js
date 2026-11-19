@@ -1,8 +1,8 @@
-// The app-wide Scratchpad: one free-text pane, one text file, every space.
-// The layout places this mod ("place": "none"); the tabs-scratchpad fork's
-// Scratchpad button and cmd-shift-s toggle the hidden "scratchpad" block.
-// The text lives in data/scratchpad/scratchpad.txt in the app's home, so it
-// survives restarts and hot reloads, and reads the same in every space.
+// The app-wide Jot: one free-text pane, one text file, every space.
+// The layout places this mod ("place": "none"); the tabs-jot fork's Jot
+// button and cmd-shift-s toggle the hidden "jot" block. The text lives in
+// data/jot/jot.txt in the app's home, so it survives restarts and hot
+// reloads, and reads the same in every space.
 // That file is the pad's whole interface: coding agents append notes to it
 // (this repo's AGENTS.md gives them the path), and a watchFolder loop pulls
 // their edits into the editor whenever nothing of ours is in flight — a
@@ -11,15 +11,15 @@ import { View, div } from "gpui-kit";
 import { v_flex, h_flex, Textarea, TextareaState } from "gpui-base";
 import { appHome, readTextFile, writeTextFile, watchFolder, checking, theme, settings } from "herdr";
 
-const dir = () => `${appHome()}/data/scratchpad`;
-const file = () => `${dir()}/scratchpad.txt`;
+const dir = () => `${appHome()}/data/jot`;
+const file = () => `${dir()}/jot.txt`;
 // The terminals' mono font (Herdr's bundled default when unset).
 const mono = () => settings().font_family ?? "JetBrains Mono";
 
-export default class Scratchpad extends View {
+export default class Jot extends View {
   init(_props, cx) {
     // Retained text state: a live host call, so it belongs here, never in render.
-    this.state = TextareaState.new({ placeholder: "Jot anything — one scratchpad for every space, saved as you type." });
+    this.state = TextareaState.new({ placeholder: "Jot anything — one pad for every space, saved as you type." });
     this.state.set_soft_wrap(true);
     this.typed = false;
     this.pending = undefined;
@@ -89,9 +89,9 @@ export default class Scratchpad extends View {
 
   render() {
     const t = theme();
-    return v_flex().id("scratchpad").size_full().min_h(0).rounded(10).overflow_hidden().bg(t.background).border_1().border_color(t.border).text_color(t.foreground).text_size(13)
+    return v_flex().id("jot").size_full().min_h(0).rounded(10).overflow_hidden().bg(t.background).border_1().border_color(t.border).text_color(t.foreground).text_size(13)
       .child(h_flex().h(42).flex_none().px(14).gap(8).items_center().border_b(1).border_color(t.border)
-        .child(div().font_semibold().child("Scratchpad"))
+        .child(div().font_semibold().child("Jot"))
         .child(div().flex_1().min_w(0).truncate().text_right().text_size(12).text_color(t.dim).child("one pad · every space")))
       .child(Textarea.new(this.state).font_family(mono()).flex_1().min_h(0).px(14).py(12));
   }

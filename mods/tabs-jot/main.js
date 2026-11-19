@@ -1,8 +1,8 @@
-// Fork of Herdr's shipped "tabs" mod, with one change set: a "Scratchpad"
+// Fork of Herdr's shipped "tabs" mod, with one change set: a "Jot"
 // pill after Files / Changes that toggles the layout's hidden right-side
-// "scratchpad" block with a single command (layout.toggle, so the button and
+// "jot" block with a single command (layout.toggle, so the button and
 // cmd-shift-s do the same thing), and per-space open memory for that block,
-// mirroring syncPanel below. On layouts without a "scratchpad" block the fork
+// mirroring syncPanel below. On layouts without a "jot" block the fork
 // draws exactly what the shipped tab bar draws. Everything else is the
 // shipped code as cloned. Clones are never updated: if the shipped mod moves
 // on, re-clone it and re-apply this change set.
@@ -42,7 +42,7 @@ export default class Tabs extends View {
     this.scroll = ScrollHandle.new();
     try { this.panels = JSON.parse(localStorage.getItem("panels") ?? "{}"); } catch { this.panels = {}; }
     if (!this.panels || typeof this.panels !== "object" || Array.isArray(this.panels)) this.panels = {};
-    // The fork's addition: the scratchpad block's per-space open memory.
+    // The fork's addition: the jot block's per-space open memory.
     try { this.pads = JSON.parse(localStorage.getItem("pads") ?? "{}"); } catch { this.pads = {}; }
     if (!this.pads || typeof this.pads !== "object" || Array.isArray(this.pads)) this.pads = {};
     this.swipe = { acc: 0, steps: 0, at: 0, last: 0 };
@@ -99,7 +99,7 @@ export default class Tabs extends View {
     localStorage.setItem("panels", JSON.stringify(this.panels));
   }
 
-  // The fork's addition: the scratchpad block, remembered per space the same
+  // The fork's addition: the jot block, remembered per space the same
   // way — switching shows that space's choice, opening or closing records it.
   syncPad(space, pad) {
     if (!space || !pad) return;
@@ -111,8 +111,8 @@ export default class Tabs extends View {
         const want = this.pads[space.id] ? "on" : null;
         if (want !== now) {
           this.padPending = { want, until: Date.now() + 1000 };
-          if (want) run("layout.show", { id: "scratchpad" });
-          else run("layout.hide", { id: "scratchpad" });
+          if (want) run("layout.show", { id: "jot" });
+          else run("layout.hide", { id: "jot" });
           return;
         }
       }
@@ -170,7 +170,7 @@ export default class Tabs extends View {
     const panel = find(root, "panel"), body = find(root, "panel-body");
     const enabled = shared("workspace.panels") ?? ["files", "changes"];
     this.syncPanel(space, panel, body, enabled);
-    const pad = find(root, "scratchpad");
+    const pad = find(root, "jot");
     this.syncPad(space, pad);
     const panelButton = (id, label, icon) => {
       const on = panel && !panel.hidden && body?.active === id;
@@ -182,15 +182,15 @@ export default class Tabs extends View {
           else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
         }).child(svg(icon).size(14)).child(label);
     };
-    // The fork's addition: the Scratchpad pill. One command, so the button and
+    // The fork's addition: the Jot pill. One command, so the button and
     // cmd-shift-s stay in step; drawn only when the layout has the block.
     const padButton = () => {
       const on = pad && !pad.hidden;
-      return h_flex().id("pad-scratchpad").h(26).px(8).gap(5).flex_none().items_center().rounded(6)
+      return h_flex().id("pad-jot").h(26).px(8).gap(5).flex_none().items_center().rounded(6)
         .text_size(12).bg(on ? t.selected : t.chrome).text_color(on ? t.foreground : t.muted)
         .hover(s => s.bg(t.hover)).on_mouse_down("left", stop)
-        .on_click(() => run("layout.toggle", { id: "scratchpad" }))
-        .child(svg("mods/scratchpad/icon.svg").size(14)).child("Scratchpad");
+        .on_click(() => run("layout.toggle", { id: "jot" }))
+        .child(svg("mods/jot/icon.svg").size(14)).child("Jot");
     };
     return h_flex().size_full().min_w(0).px(10).pl(lightsPadding).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)
       .on_mouse_up("left", () => { this.pressed = null; })
@@ -202,8 +202,8 @@ export default class Tabs extends View {
       .when(enabled.includes("files"), el => el.child(panelButton("files", "Files", "mods/files/file.svg")))
       .when(enabled.includes("changes"), el => el.child(panelButton("changes", "Changes", "mods/changes/changes.svg")))
       .when(pad, el => el.child(padButton()))
-      .when(w?.buttons, el => el.child(button("minimize", w.platform === "windows" ? svg("mods/tabs-scratchpad/win-min.svg").size(16) : "−", () => run("window.minimize")))
-        .child(button("maximize", w.platform === "windows" ? svg(`mods/tabs-scratchpad/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
-        .child(button("close-window", w.platform === "windows" ? svg("mods/tabs-scratchpad/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close"))));
+      .when(w?.buttons, el => el.child(button("minimize", w.platform === "windows" ? svg("mods/tabs-jot/win-min.svg").size(16) : "−", () => run("window.minimize")))
+        .child(button("maximize", w.platform === "windows" ? svg(`mods/tabs-jot/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
+        .child(button("close-window", w.platform === "windows" ? svg("mods/tabs-jot/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close"))));
   }
 }

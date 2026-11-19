@@ -1,5 +1,5 @@
 {
   "layout:main-copy": {
-    "cmd-shift-s": { "command": "layout.toggle", "args": { "id": "scratchpad" } }
+    "cmd-shift-s": { "command": "layout.toggle", "args": { "id": "jot" } }
   }
 }

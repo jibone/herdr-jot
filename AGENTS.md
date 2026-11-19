@@ -1,4 +1,4 @@
-# herdr-scratchpad
+# herdr-jot
 
 A **herdr-app mod** (plugin): a small JavaScript panel that runs inside the
 Herdr desktop app. This repo is the mod's source; the running app only reads
@@ -30,16 +30,17 @@ the app rewrites those.
 
 ## The pad as a file (for coding agents)
 
-The scratchpad is a plain UTF-8 text file on this machine:
+The jot is a plain UTF-8 text file on this machine:
 
 ```
-~/.config/herdr-app/data/scratchpad/scratchpad.txt
+~/.config/herdr-app/data/jot/jot.txt
 ```
 
-When the person says "note it down in the scratchpad", they mean: append a
-short note to that file. When they say "refer to the scratchpad", they mean:
-read it. The pad watches the file, so the note shows in the open pad within a
-moment (also while its pane is closed — it's there on the next open).
+When the person says "jot it down" (or "note it down in the jot"), they
+mean: append a short note to that file. When they say "refer to the jot",
+they mean: read it. The pad watches the file, so the note shows in the open
+pad within a moment (also while its pane is closed — it's there on the next
+open).
 
 - Append only: don't rewrite the whole file for one note.
 - Keep it small — the pad reads with a 1 MiB cap — and plain text.
@@ -59,14 +60,14 @@ A herdr.dev-style package: a layout integration plus the mods it needs.
 
 ```
 layouts/main-copy.json   this machine's daily layout (a personal clone of Herdr's
-                         shipped main): its tabs block points at tabs-scratchpad,
+                         shipped main): its tabs block points at tabs-jot,
                          and its work-body carries the hidden right-side
-                         "scratchpad" block the pill toggles. On another machine,
+                         "jot" block the pill toggles. On another machine,
                          graft those two edits onto any main-derived layout
                          instead of using this file as-is.
-mods/scratchpad/         the pad: main.js, mod.json, icon.svg. The text lives in
-                         data/scratchpad/scratchpad.txt in the app home.
-mods/tabs-scratchpad/    a fork of Herdr's shipped tabs mod: the "Scratchpad"
+mods/jot/                the pad: main.js, mod.json, icon.svg. The text lives in
+                         data/jot/jot.txt in the app home.
+mods/tabs-jot/           a fork of Herdr's shipped tabs mod: the "Jot"
                          pill after Files/Changes and per-space open memory.
                          Frozen at the version it was forked from.
 RECIPE.md                the brief to rebuild all of this from scratch
