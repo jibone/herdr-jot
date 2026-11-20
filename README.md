@@ -1,14 +1,26 @@
 # herdr-jot
 
+[![One pad for every space: the headline on the left, the real Herdr window on the right with the Jot pill in its tab bar and the pane open beside the terminals](assets/hero.png)](assets/hero.png)
+
 A **Herdr app plugin**: one Jot pad for the whole app.
 
-![Jot](preview.png)
+[![MIT license](https://img.shields.io/badge/license-MIT-8E929A?style=flat-square&labelColor=1F1F22)](LICENSE) [![Herdr mod](https://img.shields.io/badge/herdr-mod-D97757?style=flat-square&labelColor=1F1F22)](https://herdr.dev/mods) ![macOS and Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-8E929A?style=flat-square&labelColor=1F1F22) [![Tests and quality checks on macOS](https://img.shields.io/github/actions/workflow/status/jibone/herdr-jot/macos.yml?branch=master&label=macOS&style=flat-square&labelColor=1F1F22)](https://github.com/jibone/herdr-jot/actions/workflows/macos.yml) [![Tests and quality checks on Linux](https://img.shields.io/github/actions/workflow/status/jibone/herdr-jot/linux.yml?branch=master&label=Linux&style=flat-square&labelColor=1F1F22)](https://github.com/jibone/herdr-jot/actions/workflows/linux.yml) ![Touches one text file](https://img.shields.io/badge/touches-one%20text%20file-7FB77E?style=flat-square&labelColor=1F1F22)
+
+**The same notes in every space, saved as you type to one plain text file — a file your coding agents can read and write too.**
+
+[What it looks like](#what-it-looks-like) · [What you get](#what-you-get) · [Install](#install) · [Develop](#develop) · [Notes](#notes--trade-offs) · [Recipe](RECIPE.md)
 
 A "Jot" pill sits in the tab bar next to Files and Changes. Click it
 (or press `cmd-shift-s`) and a free-text pane opens on the right side of the
 window. It's one pad for the whole app: the same text in every space, saved
 as you type to a single text file, still there after a restart or a hot
 reload.
+
+## What it looks like
+
+![The pad running in Herdr: the Jot pill between Files and Changes in the tab bar, the pane open on the right of the terminals](assets/screenshot.png)
+
+The real window running the pad — the mockup above only sets the scene.
 
 ## What you get
 
@@ -33,8 +45,8 @@ reload.
 
 ## Install
 
-Requires the [Herdr app](https://herdr.dev) and a layout derived from
-Herdr's shipped `main`.
+Requires the [Herdr app](https://herdr.dev) on macOS or Linux, and a layout
+derived from Herdr's shipped `main`.
 
 **The agent way** — one line, the same pattern as the mods listed on
 [herdr.dev/mods](https://herdr.dev/gallery/?type=mods). Tell your coding
@@ -56,8 +68,9 @@ to this machine), merges the key into `~/.config/herdr-app/keys.json`
 **By hand instead:**
 
 ```sh
-# 1. the two mods
-rsync -a mods/ ~/.config/herdr-app/mods/
+# 1. the two mods (their test folders are dev-only and stay out)
+rsync -a --exclude test --exclude gpui-kit.d.ts --exclude herdr.d.ts --exclude jsconfig.json \
+  mods/ ~/.config/herdr-app/mods/
 
 # 2. the layout: copy mine if yours is close enough to shipped main
 rsync -a layouts/ ~/.config/herdr-app/layouts/
@@ -84,14 +97,45 @@ herdr-app check ~/.config/herdr-app/mods/jot
 herdr-app check ~/.config/herdr-app/mods/tabs-jot
 ```
 
+## Develop
+
+```sh
+rsync -a --delete --exclude test --exclude gpui-kit.d.ts --exclude herdr.d.ts --exclude jsconfig.json \
+  mods/jot/ ~/.config/herdr-app/mods/jot/
+rsync -a --delete --exclude test --exclude gpui-kit.d.ts --exclude herdr.d.ts --exclude jsconfig.json \
+  mods/tabs-jot/ ~/.config/herdr-app/mods/tabs-jot/
+npm ci && npm test
+herdr-app check ~/.config/herdr-app/mods/jot
+herdr-app check ~/.config/herdr-app/mods/tabs-jot
+```
+
+Copy the mods, don't symlink them: Herdr won't load icons through a link
+that leaves its home, so the Jot pill would be blank. Saving into the
+installed copy hot-reloads it, so the `rsync` above is enough.
+
+`npm test` runs the jot mod's tests — the real `main.js` over host
+stand-ins, `node --test`, no dependencies, Node 24 or newer — then the
+quality gate in `test/quality/`: eslint (size and complexity limits, the
+one class per mod, no eslint-disable escapes), jscpd (no copied code), and
+the probes that keep both honest. The tabs-jot fork is held to base and
+style rules only: it's Herdr's own code, frozen at the version it was
+cloned from, and never edited to satisfy a rule. CI runs the same
+`npm test` on Linux and macOS (`.github/workflows/`) for every pull
+request and push to `master`; a pull request merges only when both pass.
+
+[RECIPE.md](RECIPE.md) is the brief to build the plugin from scratch.
+
 ## Repo layout
 
 | Path | What |
 |---|---|
-| `mods/jot/` | the pad: `main.js`, `mod.json`, `icon.svg` |
+| `mods/jot/` | the pad: `main.js`, `mod.json`, `icon.svg`, and `test/` (not installed) |
 | `mods/tabs-jot/` | fork of Herdr's shipped tab bar: the Jot pill + per-space open memory |
 | `layouts/main-copy.json` | this machine's daily layout, grafted — `RECIPE.md` describes the generic graft |
 | `keys.json` | the `cmd-shift-s` binding to merge by hand |
+| `test/quality/`, `tools/quality/` | the quality gate `npm test` runs after the mod's tests |
+| `assets/` | the hero image, its source (`assets/src/hero.html`), and the real screenshot it embeds |
+| `.github/workflows/` | CI: `npm test` on Linux and macOS |
 | `RECIPE.md` | the brief to rebuild the whole plugin from scratch |
 | `AGENTS.md` | instructions for coding agents working in this repo |
 
@@ -112,6 +156,18 @@ herdr-app check ~/.config/herdr-app/mods/tabs-jot
   `preview.png` and the `herdr-mod` topic — so it lists at
   [herdr.dev/mods](https://herdr.dev/gallery/?type=mods) on the gallery's
   next crawl.
+
+## Credits
+
+`mods/tabs-jot/` is a fork of Herdr's shipped `tabs` mod, kept verbatim
+except for its one change set (the fork's header comment lists it).
+`assets/hero.png` and `preview.png` render from `assets/src/hero.html`
+(headless Chrome, 880×540 at 2× and 1.591×): the mockup's right side is
+the real app, committed as `assets/screenshot.png`.
+
+## License
+
+[MIT](LICENSE)
 
 For agents and contributors: read `AGENTS.md` first — it points at
 `~/.config/herdr-app/AGENTS.md`, the Herdr app's own agent guide, as the

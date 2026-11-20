@@ -7,7 +7,7 @@ screen, saved as you type to one text file. That file is the pad's whole
 interface: a coding agent told to "jot it down" appends to it, and the pad
 shows the note a moment later.
 
-![Jot](preview.png)
+![Jot](assets/screenshot.png)
 
 ## What you see
 
@@ -116,6 +116,8 @@ shows the note a moment later.
 
 ## Done when
 
+- `npm ci && npm test` passes: the jot mod's tests over host stand-ins,
+  then the quality gate.
 - `herdr-app check` passes for both `mods/jot` and
   `mods/tabs-jot`, and `herdr-app status` shows no errors with the
   pad open.

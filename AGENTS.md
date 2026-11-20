@@ -65,13 +65,18 @@ layouts/main-copy.json   this machine's daily layout (a personal clone of Herdr'
                          "jot" block the pill toggles. On another machine,
                          graft those two edits onto any main-derived layout
                          instead of using this file as-is.
-mods/jot/                the pad: main.js, mod.json, icon.svg. The text lives in
-                         data/jot/jot.txt in the app home.
+mods/jot/                the pad: main.js, mod.json, icon.svg, and test/
+                         (unit tests over host stand-ins — not installed).
+                         The text lives in data/jot/jot.txt in the app home.
 mods/tabs-jot/           a fork of Herdr's shipped tabs mod: the "Jot"
                          pill after Files/Changes and per-space open memory.
                          Frozen at the version it was forked from.
+test/quality/, tools/    the quality gate npm test runs after the mod's tests
+assets/                  the hero image, its source (src/hero.html), and the real
+                         window screenshot the mockup embeds (screenshot.png)
+.github/workflows/       CI: npm test on Linux and macOS, one workflow each
 RECIPE.md                the brief to rebuild all of this from scratch
-preview.png              a screenshot of it running
+preview.png              a mockup of the pad with sample notes (from assets/src/hero.html)
 keys.json                the section to merge into the app home's keys.json
 ```
 
@@ -80,8 +85,10 @@ docks nothing on its own.
 
 ## Developing
 
-1. The app only reads its own home. To test, copy this repo's pieces there:
-   `rsync -a mods/ ~/.config/herdr-app/mods/` and
+1. The app only reads its own home, and doesn't hot-reload a symlinked mod.
+   To test, copy the mods there (test folders are dev-only and stay out):
+   `rsync -a --delete --exclude test --exclude gpui-kit.d.ts --exclude herdr.d.ts --exclude jsconfig.json mods/jot/ ~/.config/herdr-app/mods/jot/`
+   (the same for `mods/tabs-jot/`), plus
    `rsync -a layouts/ ~/.config/herdr-app/layouts/`, then merge `keys.json`
    by hand (below).
 2. Saving a file hot-reloads every copy in the window; a broken save keeps
@@ -89,14 +96,45 @@ docks nothing on its own.
 3. After every change: `herdr-app check ~/.config/herdr-app/mods/<name>` for
    each mod. It exits nonzero with the exact error. Never call a mod done
    without a passing check — and trying it in the app.
-4. `herdr-app shot [file.png]` saves the current window frame when debugging
+4. `npm ci && npm test` runs the jot mod's tests and the quality gate.
+   Node 24 or newer (`.nvmrc`, `engines`): the tests need
+   `module.registerHooks`.
+5. `herdr-app shot [file.png]` saves the current window frame when debugging
    the drawn UI.
+
+### Code
+
+- Comments are allowed in this repo, unlike herdr-limits: the fork keeps
+  Herdr's own comments, and jot's say why the tricky parts are the way
+  they are. RECIPE.md's Watch out carries the platform reasons regardless.
+- `npm test` runs the mod's tests, then the quality gate in `test/quality/`:
+  eslint (size and complexity limits on the code we own, the one class per
+  mod, no eslint-disable escapes, no shadowing), jscpd (no copied code),
+  and the probes that keep both honest.
+- The tabs-jot fork is held to base and style rules only, and never edited
+  to satisfy a rule — it's Herdr's shipped code, frozen; a rule it breaks
+  joins the exemption block in `eslint.config.js` (or `.jscpd.json`'s
+  ignore) instead.
+- CI runs the same `npm test` (`.github/workflows/tests.yml`) on Linux and
+  macOS, one workflow each (`linux.yml`, `macos.yml`, so each has its README
+  badge), for every pull request and every push to `master`; a pull request
+  merges only when both pass.
 
 ## Sharing (herdr.dev/mods)
 
-- Write the `RECIPE.md` from the real files, add a `preview.png`, put this
-  folder in a public GitHub repo and add the topic `herdr-mod`; it shows up
-  at herdr.dev/mods within the hour.
+- Write the `RECIPE.md` from the real files, keep `preview.png` current, put
+  this folder in a public GitHub repo and add the topic `herdr-mod`; it
+  shows up at herdr.dev/mods within the hour.
+- `assets/hero.png` (the README's top image, 1760×1080) and `preview.png`
+  (the gallery card, 1400×859) are rendered from one mockup,
+  `assets/src/hero.html` (880×540, headless Chrome at 2× and 1.591×):
+  `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  --headless=new --hide-scrollbars --screenshot=<out> --window-size=880,540
+  --force-device-scale-factor=<2 | 1.591> "file://…/assets/src/hero.html"`.
+  Change the mockup, not the PNGs; re-render both after. The mockup's right
+  side embeds the real window screenshot, committed as
+  `assets/screenshot.png` — replace it only with another real
+  `herdr-app shot`, never with a render.
 - The repo's layout file is this machine's personal integration (it
   references other mods the person has installed); `RECIPE.md` describes the
   two grafts that install the plugin on any main-derived layout.

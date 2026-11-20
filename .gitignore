@@ -1,6 +1,14 @@
-# Auto-generated type declarations, written once by gpui-shell whenever
-# `herdr-app check` runs on a mod folder. Don't commit; regenerate by checking.
-mods/*/gpui-kit.d.ts
+# Auto-generated type declarations, written once by gpui-shell wherever
+# `herdr-app check` meets a mod's files. Don't commit; regenerate by checking.
+gpui-kit.d.ts
+herdr.d.ts
 
 # Editor support for the mods' runtime, also written once by gpui-shell:
 # jsconfig.json is yours after it lands — commit it or ignore it as you like.
+
+# The quality gate's dependencies.
+node_modules/
+
+# Scratch and machine noise.
+docs/
+.DS_Store
