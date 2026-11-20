@@ -1,14 +1,25 @@
-# herdr-jot
+<p align="center">
+  <img src="assets/hero.png" width="100%" alt="One pad for every space: the headline on the left, the real Herdr window on the right with the Jot pill in its tab bar and the pane open beside the terminals">
+</p>
 
-[![One pad for every space: the headline on the left, the real Herdr window on the right with the Jot pill in its tab bar and the pane open beside the terminals](assets/hero.png)](assets/hero.png)
+<h1 align="center">herdr-jot</h1>
 
-A **Herdr app plugin**: one Jot pad for the whole app.
+<p align="center"><strong>One Jot pad for the whole Herdr app: the same notes in every space, saved as you type to one plain text file — a file your coding agents can read and write too.</strong></p>
 
-[![MIT license](https://img.shields.io/badge/license-MIT-8E929A?style=flat-square&labelColor=1F1F22)](LICENSE) [![Herdr mod](https://img.shields.io/badge/herdr-mod-D97757?style=flat-square&labelColor=1F1F22)](https://herdr.dev/mods) ![macOS and Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-8E929A?style=flat-square&labelColor=1F1F22) [![Tests and quality checks on macOS](https://img.shields.io/github/actions/workflow/status/jibone/herdr-jot/macos.yml?branch=master&label=macOS&style=flat-square&labelColor=1F1F22)](https://github.com/jibone/herdr-jot/actions/workflows/macos.yml) [![Tests and quality checks on Linux](https://img.shields.io/github/actions/workflow/status/jibone/herdr-jot/linux.yml?branch=master&label=Linux&style=flat-square&labelColor=1F1F22)](https://github.com/jibone/herdr-jot/actions/workflows/linux.yml) ![Touches one text file](https://img.shields.io/badge/touches-one%20text%20file-7FB77E?style=flat-square&labelColor=1F1F22)
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-8E929A?style=flat-square&labelColor=1F1F22" alt="MIT license"></a>
+  <a href="https://herdr.dev/mods"><img src="https://img.shields.io/badge/herdr-mod-D97757?style=flat-square&labelColor=1F1F22" alt="Herdr mod"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-8E929A?style=flat-square&labelColor=1F1F22" alt="macOS and Linux">
+  <a href="https://github.com/jibone/herdr-jot/actions/workflows/macos.yml"><img src="https://img.shields.io/github/actions/workflow/status/jibone/herdr-jot/macos.yml?branch=master&label=macOS&style=flat-square&labelColor=1F1F22" alt="Tests and quality checks on macOS"></a>
+  <a href="https://github.com/jibone/herdr-jot/actions/workflows/linux.yml"><img src="https://img.shields.io/github/actions/workflow/status/jibone/herdr-jot/linux.yml?branch=master&label=Linux&style=flat-square&labelColor=1F1F22" alt="Tests and quality checks on Linux"></a>
+  <img src="https://img.shields.io/badge/touches-one%20text%20file-7FB77E?style=flat-square&labelColor=1F1F22" alt="Touches one text file">
+</p>
 
-**The same notes in every space, saved as you type to one plain text file — a file your coding agents can read and write too.**
+<p align="center">
+  <a href="#what-it-looks-like">What it looks like</a> · <a href="#what-you-get">What you get</a> · <a href="#install">Install</a> · <a href="#develop">Develop</a> · <a href="#notes--trade-offs">Notes</a> · <a href="RECIPE.md">Recipe</a>
+</p>
 
-[What it looks like](#what-it-looks-like) · [What you get](#what-you-get) · [Install](#install) · [Develop](#develop) · [Notes](#notes--trade-offs) · [Recipe](RECIPE.md)
+<br>
 
 A "Jot" pill sits in the tab bar next to Files and Changes. Click it
 (or press `cmd-shift-s`) and a free-text pane opens on the right side of the
