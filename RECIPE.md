@@ -7,7 +7,7 @@ screen, saved as you type to one text file. That file is the pad's whole
 interface: a coding agent told to "jot it down" appends to it, and the pad
 shows the note a moment later.
 
-![Jot](preview.png)
+![Jot](assets/screenshot.png)
 
 ## What you see
 

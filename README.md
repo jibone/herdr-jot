@@ -1,6 +1,6 @@
 # herdr-jot
 
-[![One pad for every space: the jot pane open on the right with the day's notes and a caret after "buy milk", the Files, Changes and Jot pills in the tab bar at the bottom, Jot active](assets/hero.png)](assets/hero.png)
+[![One pad for every space: the headline on the left, the real Herdr window on the right with the Jot pill in its tab bar and the pane open beside the terminals](assets/hero.png)](assets/hero.png)
 
 A **Herdr app plugin**: one Jot pad for the whole app.
 
@@ -8,13 +8,19 @@ A **Herdr app plugin**: one Jot pad for the whole app.
 
 **The same notes in every space, saved as you type to one plain text file — a file your coding agents can read and write too.**
 
-[Install](#install) · [What you get](#what-you-get) · [Develop](#develop) · [Notes](#notes--trade-offs) · [Recipe](RECIPE.md)
+[What it looks like](#what-it-looks-like) · [What you get](#what-you-get) · [Install](#install) · [Develop](#develop) · [Notes](#notes--trade-offs) · [Recipe](RECIPE.md)
 
 A "Jot" pill sits in the tab bar next to Files and Changes. Click it
 (or press `cmd-shift-s`) and a free-text pane opens on the right side of the
 window. It's one pad for the whole app: the same text in every space, saved
 as you type to a single text file, still there after a restart or a hot
 reload.
+
+## What it looks like
+
+![The pad running in Herdr: the Jot pill between Files and Changes in the tab bar, the pane open on the right of the terminals](assets/screenshot.png)
+
+The real window running the pad — the mockup above only sets the scene.
 
 ## What you get
 
@@ -128,7 +134,7 @@ request and push to `master`; a pull request merges only when both pass.
 | `layouts/main-copy.json` | this machine's daily layout, grafted — `RECIPE.md` describes the generic graft |
 | `keys.json` | the `cmd-shift-s` binding to merge by hand |
 | `test/quality/`, `tools/quality/` | the quality gate `npm test` runs after the mod's tests |
-| `assets/` | the README hero image and its source (`assets/src/hero.html`) |
+| `assets/` | the hero image, its source (`assets/src/hero.html`), and the real screenshot it embeds |
 | `.github/workflows/` | CI: `npm test` on Linux and macOS |
 | `RECIPE.md` | the brief to rebuild the whole plugin from scratch |
 | `AGENTS.md` | instructions for coding agents working in this repo |
@@ -155,10 +161,9 @@ request and push to `master`; a pull request merges only when both pass.
 
 `mods/tabs-jot/` is a fork of Herdr's shipped `tabs` mod, kept verbatim
 except for its one change set (the fork's header comment lists it).
-`assets/hero.png` and `preview.png` are mockups of the pad with sample
-notes, rendered from `assets/src/hero.html` (headless Chrome, 880×540 at 2×
-and 1.591×): the pad's glyph is the mod's own `icon.svg`, the other icons
-are from [Lucide](https://lucide.dev) (ISC).
+`assets/hero.png` and `preview.png` render from `assets/src/hero.html`
+(headless Chrome, 880×540 at 2× and 1.591×): the mockup's right side is
+the real app, committed as `assets/screenshot.png`.
 
 ## License
 

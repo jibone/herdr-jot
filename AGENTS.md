@@ -72,7 +72,8 @@ mods/tabs-jot/           a fork of Herdr's shipped tabs mod: the "Jot"
                          pill after Files/Changes and per-space open memory.
                          Frozen at the version it was forked from.
 test/quality/, tools/    the quality gate npm test runs after the mod's tests
-assets/                  the README hero image and its source (src/hero.html)
+assets/                  the hero image, its source (src/hero.html), and the real
+                         window screenshot the mockup embeds (screenshot.png)
 .github/workflows/       CI: npm test on Linux and macOS, one workflow each
 RECIPE.md                the brief to rebuild all of this from scratch
 preview.png              a mockup of the pad with sample notes (from assets/src/hero.html)
@@ -130,7 +131,10 @@ docks nothing on its own.
   `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   --headless=new --hide-scrollbars --screenshot=<out> --window-size=880,540
   --force-device-scale-factor=<2 | 1.591> "file://…/assets/src/hero.html"`.
-  Change the mockup, not the PNGs; re-render both after.
+  Change the mockup, not the PNGs; re-render both after. The mockup's right
+  side embeds the real window screenshot, committed as
+  `assets/screenshot.png` — replace it only with another real
+  `herdr-app shot`, never with a render.
 - The repo's layout file is this machine's personal integration (it
   references other mods the person has installed); `RECIPE.md` describes the
   two grafts that install the plugin on any main-derived layout.
