@@ -116,6 +116,8 @@ shows the note a moment later.
 
 ## Done when
 
+- `npm ci && npm test` passes: the jot mod's tests over host stand-ins,
+  then the quality gate.
 - `herdr-app check` passes for both `mods/jot` and
   `mods/tabs-jot`, and `herdr-app status` shows no errors with the
   pad open.

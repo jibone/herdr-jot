@@ -1,0 +1,23 @@
+{
+  "minTokens": 50,
+  "minLines": 4,
+  "format": [
+    "javascript"
+  ],
+  "ignore": [
+    "**/node_modules/**",
+    "**/fixtures/**",
+    "**/*.d.ts",
+    "**/tabs-jot/**"
+  ],
+  "reporters": [
+    "json"
+  ],
+  "silent": true,
+  "formatsExts": {
+    "javascript": [
+      "js",
+      "mjs"
+    ]
+  }
+}

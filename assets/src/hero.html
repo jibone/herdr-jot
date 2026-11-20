@@ -1,0 +1,120 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="icons.css">
+<style>
+  :root {
+    --fg: #ecece8; --muted: #a6a7a2; --dim: #7b7d79; --line: #34363a;
+    --ok: #a3c58d; --panel: #232427; --mint: #7fe0b8; --chrome: #17181a;
+    --raised: #2b2d31; --edge: #3f4147;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 880px; height: 540px; overflow: hidden; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+    color: var(--fg); -webkit-font-smoothing: antialiased; position: relative;
+    background:
+      radial-gradient(60% 70% at 8% 18%, rgba(127,224,184,.16) 0%, rgba(127,224,184,0) 70%),
+      radial-gradient(55% 60% at 92% 95%, rgba(223,194,126,.10) 0%, rgba(223,194,126,0) 70%),
+      #101113;
+  }
+  body::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1.2px);
+    background-size: 18px 18px;
+    -webkit-mask-image: linear-gradient(100deg, #000 0%, rgba(0,0,0,.55) 45%, transparent 75%);
+  }
+
+  .copy { position: absolute; left: 48px; top: 66px; width: 410px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; letter-spacing: .6px;
+    text-transform: uppercase; color: var(--mint); padding: 4px 10px 4px 8px; border-radius: 999px;
+    background: rgba(127,224,184,.08); box-shadow: inset 0 0 0 1px rgba(127,224,184,.25); }
+  .eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 8px var(--mint); }
+  h1 { margin-top: 22px; font-size: 46px; line-height: 48px; font-weight: 750; letter-spacing: -1.6px; }
+  h1 em { font-style: normal; color: var(--mint); }
+  .lede { margin-top: 16px; font-size: 15.5px; line-height: 22px; color: var(--muted); width: 396px; }
+
+  .roster { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; width: 390px; }
+  .agent { display: flex; align-items: center; gap: 9px; padding: 8px 11px; border-radius: 9px;
+    background: rgba(255,255,255,.035); box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); font-size: 12.6px; }
+  .agent small { margin-left: auto; font-size: 10.4px; color: var(--dim); }
+  .agent .ico { width: 15px; height: 15px; }
+
+  .ico { display: inline-block; width: 14px; height: 14px; flex: none;
+    background-color: currentColor; -webkit-mask: center/contain no-repeat; }
+  .jot { -webkit-mask-image: var(--i-jot); color: var(--mint); }
+  .save { -webkit-mask-image: var(--i-save); color: var(--mint); }
+  .bot { -webkit-mask-image: var(--i-bot); color: var(--mint); }
+  .command { -webkit-mask-image: var(--i-command); color: var(--mint); }
+  .history { -webkit-mask-image: var(--i-history); color: var(--mint); }
+  .type { -webkit-mask-image: var(--i-type); color: var(--mint); }
+  .file { -webkit-mask-image: var(--i-file); color: var(--muted); }
+  .branch { -webkit-mask-image: var(--i-branch); color: var(--muted); }
+
+  .pad {
+    position: absolute; right: 22px; bottom: 58px; width: 366px;
+    background: var(--panel); border-radius: 11px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
+  }
+  .pad-head { display: flex; align-items: baseline; gap: 8px; height: 42px; padding: 0 14px;
+    border-bottom: 1px solid var(--line); }
+  .pad-head b { font-size: 13px; font-weight: 600; }
+  .pad-head span { margin-left: auto; font-size: 12px; color: var(--dim); }
+  .pad-body { padding: 12px 14px 14px; font-family: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 11.5px; line-height: 21px; color: var(--fg); white-space: pre; }
+  .check { color: var(--ok); }
+  .caret { display: inline-block; width: 7px; height: 14px; margin-left: 1px; vertical-align: -2px;
+    border-radius: 1.5px; background: var(--mint); }
+
+  .bar {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 36px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 14px; background: var(--chrome); border-top: 1px solid #2a2c2f;
+    font-size: 11.6px; white-space: nowrap;
+  }
+  .tab { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 6px;
+    color: var(--muted); font-size: 11.8px; }
+  .tab.on { background: var(--raised); color: var(--fg); box-shadow: inset 0 0 0 1px var(--edge); }
+  .spin { width: 11px; height: 11px; flex: none; }
+  .plus { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+    border-radius: 6px; color: var(--dim); font-size: 14px; }
+  .gap { flex: 1; }
+  .pill { display: flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 6px;
+    background: #212226; color: var(--muted); font-size: 11.6px; }
+  .pill .ico { width: 13px; height: 13px; }
+  .pill.jot { background: rgba(127,224,184,.12); color: var(--mint);
+    box-shadow: inset 0 0 0 1px rgba(127,224,184,.35); }
+</style></head>
+<body>
+  <div class="copy">
+    <span class="eyebrow"><i></i>A Herdr mod</span>
+    <h1>One pad.<br>Every <em>space.</em></h1>
+    <p class="lede">A "Jot" pill in Herdr's tab bar opens a free-text pane beside your terminals. The same notes in every space, saved as you type to one plain text file — and your coding agents can read and write it.</p>
+    <div class="roster">
+      <div class="agent"><span class="ico jot"></span>One pad, every space<small>shared</small></div>
+      <div class="agent"><span class="ico save"></span>Saved as you type<small>atomic</small></div>
+      <div class="agent"><span class="ico bot"></span>Agents can jot too<small>one text file</small></div>
+      <div class="agent"><span class="ico command"></span>cmd-shift-s<small>toggle</small></div>
+      <div class="agent"><span class="ico history"></span>Survives restarts<small>and hot reloads</small></div>
+      <div class="agent"><span class="ico type"></span>Plain wrapped text<small>your theme's mono</small></div>
+    </div>
+  </div>
+
+  <div class="pad">
+    <div class="pad-head"><b>Jot</b><span>one pad · every space</span></div>
+    <div class="pad-body">- ship the jot hero mockup
+- CI green on linux too <span class="check">✓</span>
+- ask about the herdr.dev listing
+- buy milk<span class="caret"></span></div>
+  </div>
+
+  <div class="bar">
+    <div class="tab on">herdr-jot</div>
+    <div class="tab"><svg class="spin" viewBox="0 0 12 12"><path d="M6 1a5 5 0 0 1 5 5" stroke="#dfc27e" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>claude</div>
+    <div class="plus">+</div>
+    <div class="gap"></div>
+    <div class="pill"><span class="ico file"></span>Files</div>
+    <div class="pill"><span class="ico branch"></span>Changes</div>
+    <div class="pill jot"><span class="ico jot"></span>Jot</div>
+  </div>
+
+</body></html>
