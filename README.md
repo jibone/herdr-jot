@@ -70,26 +70,22 @@ Read ~/.config/herdr-app/AGENTS.md, then add this mod: https://github.com/jibone
 It reads `RECIPE.md` and every file first, tells you what the pad touches
 (one text file, `~/.config/herdr-app/data/jot/jot.txt` — no network,
 nothing executed), then copies the two mods into
-`~/.config/herdr-app/mods/`, grafts the layout edits onto your own
-main-derived layout (not `layouts/main-copy.json` — that one is personal
-to this machine), merges the key into `~/.config/herdr-app/keys.json`
+`~/.config/herdr-app/mods/`, grafts the two layout edits onto your own
+main-derived layout, merges the key into `~/.config/herdr-app/keys.json`
 (renaming the `layout:main-copy` section to your layout's name), runs
 `herdr-app check` on both mods and tries the pill in the app.
 
 **By hand instead:**
 
 ```sh
-# 1. the two mods (their test folders are dev-only and stay out)
+# the two mods (their test folders are dev-only and stay out)
 rsync -a --exclude test --exclude gpui-kit.d.ts --exclude herdr.d.ts --exclude jsconfig.json \
   mods/ ~/.config/herdr-app/mods/
-
-# 2. the layout: copy mine if yours is close enough to shipped main
-rsync -a layouts/ ~/.config/herdr-app/layouts/
 ```
 
-`layouts/main-copy.json` in this repo is my personal daily layout (a clone
-of `main` with my own mods wired in). To install on your own setup instead,
-graft two edits onto any main-derived layout:
+No layout file ships with the mod: herdr.dev's mod listing takes packages
+without a `layouts/` folder, and my own daily layout wouldn't fit yours
+anyway. Graft two edits onto any main-derived layout:
 
 - point the `tabs` block at `"tabs-jot"`
 - add the hidden right-side block to `work-body`, after `panel`:
@@ -142,7 +138,6 @@ request and push to `master`; a pull request merges only when both pass.
 |---|---|
 | `mods/jot/` | the pad: `main.js`, `mod.json`, `icon.svg`, and `test/` (not installed) |
 | `mods/tabs-jot/` | fork of Herdr's shipped tab bar: the Jot pill + per-space open memory |
-| `layouts/main-copy.json` | this machine's daily layout, grafted — `RECIPE.md` describes the generic graft |
 | `keys.json` | the `cmd-shift-s` binding to merge by hand |
 | `test/quality/`, `tools/quality/` | the quality gate `npm test` runs after the mod's tests |
 | `assets/` | the hero image, its source (`assets/src/hero.html`), and the real screenshot it embeds |
@@ -163,8 +158,9 @@ request and push to `master`; a pull request merges only when both pass.
   agent's global instructions (opencode: `~/.config/opencode/AGENTS.md`;
   others: their equivalent), or the convention only reaches agents working
   inside this repo.
-- Shared the way the app documents — a public repo with `RECIPE.md`,
-  `preview.png` and the `herdr-mod` topic — so it lists at
+- Shared the way the gallery documents — a public repo with `RECIPE.md`,
+  `preview.png`, the `herdr-mod` topic and no `layouts/` folder (its mod
+  listing requires that) — so it lists at
   [herdr.dev/mods](https://herdr.dev/gallery/?type=mods) on the gallery's
   next crawl.
 

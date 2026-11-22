@@ -56,15 +56,13 @@ agent: its equivalent — see RECIPE.md's Watch out).
 
 ## Layout
 
-A herdr.dev-style package: a layout integration plus the mods it needs.
+A herdr.dev-style mod package: the mods it needs plus the recipe, preview
+and keys snippet the gallery asks for. No layout file ships — herdr.dev's
+mod listing takes packages without a `layouts/` folder, and this
+machine's daily layout is personal anyway (it wires in other mods). The
+two grafts that put the pad on screen are in RECIPE.md's Built from.
 
 ```
-layouts/main-copy.json   this machine's daily layout (a personal clone of Herdr's
-                         shipped main): its tabs block points at tabs-jot,
-                         and its work-body carries the hidden right-side
-                         "jot" block the pill toggles. On another machine,
-                         graft those two edits onto any main-derived layout
-                         instead of using this file as-is.
 mods/jot/                the pad: main.js, mod.json, icon.svg, and test/
                          (unit tests over host stand-ins — not installed).
                          The text lives in data/jot/jot.txt in the app home.
@@ -88,9 +86,11 @@ docks nothing on its own.
 1. The app only reads its own home, and doesn't hot-reload a symlinked mod.
    To test, copy the mods there (test folders are dev-only and stay out):
    `rsync -a --delete --exclude test --exclude gpui-kit.d.ts --exclude herdr.d.ts --exclude jsconfig.json mods/jot/ ~/.config/herdr-app/mods/jot/`
-   (the same for `mods/tabs-jot/`), plus
-   `rsync -a layouts/ ~/.config/herdr-app/layouts/`, then merge `keys.json`
-   by hand (below).
+   (the same for `mods/tabs-jot/`), then merge `keys.json` by hand
+   (below). This machine's daily layout is already installed at
+   `~/.config/herdr-app/layouts/main-copy.json`; the repo carries no
+   layout file (herdr.dev's mod packages have none — see Sharing), so if
+   it ever needs the grafts reapplied, they are in RECIPE.md's Built from.
 2. Saving a file hot-reloads every copy in the window; a broken save keeps
    the old version running and shows in `herdr-app status`.
 3. After every change: `herdr-app check ~/.config/herdr-app/mods/<name>` for
@@ -135,8 +135,10 @@ docks nothing on its own.
   side embeds the real window screenshot, committed as
   `assets/screenshot.png` — replace it only with another real
   `herdr-app shot`, never with a render.
-- The repo's layout file is this machine's personal integration (it
-  references other mods the person has installed); `RECIPE.md` describes the
-  two grafts that install the plugin on any main-derived layout.
+- The repo ships no layout file: the gallery's mod listing takes packages
+  without a `layouts/` folder, and a personal layout wouldn't install on
+  another machine anyway. `RECIPE.md` describes the two grafts that put
+  the plugin on any main-derived layout; this machine's own grafted
+  layout lives only in the app home.
 - A `keys.json` here is never installed directly: merge its sections into
   the app home's `keys.json`, and ask before replacing a key already in use.
