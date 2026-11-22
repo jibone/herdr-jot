@@ -7,7 +7,7 @@ screen, saved as you type to one text file. That file is the pad's whole
 interface: a coding agent told to "jot it down" appends to it, and the pad
 shows the note a moment later.
 
-![Jot](assets/screenshot.png)
+![Jot](preview.png)
 
 ## What you see
 
@@ -51,14 +51,13 @@ shows the note a moment later.
 
 ## Built from
 
-- `layouts/main-copy.json` — the person's daily layout (a clone of Herdr's
-  shipped `main` v0.1.12) with two grafts: the `tabs` block's mod pointed at
-  `tabs-jot`, and a hidden block added to `work-body` after `panel`:
+- The layout integration, two grafts onto whatever main-derived layout the
+  person already runs — the package ships no layout file (herdr.dev's mod
+  listing takes packages without a `layouts/` folder, and a personal layout
+  isn't shareable anyway): the `tabs` block's mod pointed at `tabs-jot`,
+  and a hidden block added to `work-body` after `panel`:
   `{ "id": "jot", "type": "block", "content": { "mod": "jot" },
-  "size": { "px": 420 }, "min": 260, "max": 900, "hidden": true }`. On a
-  fresh machine, graft the same two edits onto any main-derived layout; the
-  rest of this file is personal (it references herdr-nvim and gitview mods
-  the person has installed).
+  "size": { "px": 420 }, "min": 260, "max": 900, "hidden": true }`.
 - `mods/jot/` — the pane. `TextareaState.new({ placeholder })` with
   `set_soft_wrap(true)` created in `init` (a host call; never in render),
   `Textarea.new(state)` sized `flex_1().min_h(0)` in a full-height
@@ -82,15 +81,16 @@ shows the note a moment later.
 - Shipped things used as-is: the `files` card look, `mods/pane/close.svg`,
   `mods/workspace-chrome/spinner.svg`, `mods/files/file.svg`,
   `mods/changes/changes.svg`.
-- `keys.json`: `"layout:main-copy": { "cmd-shift-s": { "command":
-  "layout.toggle", "args": { "id": "jot" } } }`, merged by hand into
-  the app home's keys.
+- `keys.json`: `"layout:<name>": { "cmd-shift-s": { "command":
+  "layout.toggle", "args": { "id": "jot" } } }`, the section named after
+  the layout that got the grafts, merged by hand into the app home's keys.
 
 ## Watch out
 
-- The `tabs` fork and the layout clone are frozen: Herdr never updates a
-  clone. If the shipped tab bar changes, re-clone it and re-apply the
-  fork's change set (its header comment lists it).
+- The `tabs` fork is frozen: Herdr never updates a clone. If the shipped
+  tab bar changes, re-clone it and re-apply the fork's change set (its
+  header comment lists it). A cloned layout given the two grafts is
+  frozen the same way.
 - The fork's per-space memories live in its own localStorage (`"pads"` for
   the jot), separate from the shipped tabs mod's `"panels"`: the first run
   resets Files/Changes per-space memory once.
